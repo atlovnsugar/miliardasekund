@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -47,4 +48,993 @@
     <p>Vytvořeno s ❤️ · Staticky hostováno na <a href="https://netlify.com" target="_blank">Netlify</a></p>
   </footer>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miliarda sekund — Kdy dosáhnete životního milníku?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(255,255,255,0.04);
+            --bg-card-hover: rgba(255,255,255,0.07);
+            --border-color: rgba(255,255,255,0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-1: #6366f1;
+            --accent-2: #8b5cf6;
+            --accent-3: #a78bfa;
+            --gold-1: #f59e0b;
+            --gold-2: #fbbf24;
+            --gold-3: #fde68a;
+            --platinum-1: #64748b;
+            --platinum-2: #94a3b8;
+            --platinum-3: #cbd5e1;
+            --emerald-1: #10b981;
+            --emerald-2: #34d399;
+            --emerald-3: #a7f3d0;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 48px rgba(0,0,0,0.4);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-animation {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-animation .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-animation .orb:nth-child(1) {
+            width: 600px; height: 600px;
+            background: var(--accent-1);
+            top: -200px; left: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-animation .orb:nth-child(2) {
+            width: 500px; height: 500px;
+            background: var(--accent-2);
+            bottom: -150px; right: -100px;
+            animation-delay: -7s;
+        }
+
+        .bg-animation .orb:nth-child(3) {
+            width: 400px; height: 400px;
+            background: #ec4899;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.95); }
+            75% { transform: translate(40px, 20px) scale(1.05); }
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border-radius: 20px;
+            margin-bottom: 24px;
+            font-size: 32px;
+            box-shadow: 0 8px 32px rgba(99,102,241,0.3);
+        }
+
+        header h1 {
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        /* ===== FORM CARD ===== */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            margin-bottom: 32px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group input, .form-group select {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xs);
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group input[type="time"] {
+            color-scheme: dark;
+        }
+
+        .optional-badge {
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: lowercase;
+            letter-spacing: 0;
+            font-weight: 500;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            flex: 0;
+            padding: 14px 20px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        /* ===== RESULTS ===== */
+        .results {
+            display: none;
+            animation: fadeSlideUp 0.6s ease-out;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .results-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .results-header p {
+            color: var(--text-secondary);
+        }
+
+        .milestone-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .milestone-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .milestone-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .milestone-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+
+        .milestone-card.gold::before {
+            background: linear-gradient(90deg, var(--gold-1), var(--gold-2), var(--gold-3));
+        }
+
+        .milestone-card.platinum::before {
+            background: linear-gradient(90deg, var(--platinum-1), var(--platinum-2), var(--platinum-3));
+        }
+
+        .milestone-card.emerald::before {
+            background: linear-gradient(90deg, var(--emerald-1), var(--emerald-2), var(--emerald-3));
+        }
+
+        .milestone-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .milestone-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .milestone-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .gold .milestone-icon {
+            background: rgba(245,158,11,0.15);
+        }
+
+        .platinum .milestone-icon {
+            background: rgba(148,163,184,0.15);
+        }
+
+        .emerald .milestone-icon {
+            background: rgba(16,185,129,0.15);
+        }
+
+        .milestone-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .milestone-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .milestone-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .gold .milestone-badge {
+            background: rgba(245,158,11,0.15);
+            color: var(--gold-2);
+        }
+
+        .platinum .milestone-badge {
+            background: rgba(148,163,184,0.15);
+            color: var(--platinum-2);
+        }
+
+        .emerald .milestone-badge {
+            background: rgba(16,185,129,0.15);
+            color: var(--emerald-2);
+        }
+
+        .milestone-date {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .gold .milestone-date { color: var(--gold-2); }
+        .platinum .milestone-date { color: var(--platinum-2); }
+        .emerald .milestone-date { color: var(--emerald-2); }
+
+        .milestone-time {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .milestone-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        /* ===== COUNTDOWN ===== */
+        .countdown-section {
+            margin-top: 32px;
+        }
+
+        .countdown-card {
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+        }
+
+        .countdown-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .countdown-value {
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            background: linear-gradient(135deg, var(--accent-3), var(--gold-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .countdown-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* ===== PAST MILESTONE ===== */
+        .milestone-card.past {
+            opacity: 0.7;
+        }
+
+        .milestone-card.past .milestone-date {
+            text-decoration: line-through;
+            text-decoration-color: var(--text-muted);
+        }
+
+        .past-badge {
+            background: rgba(100,116,139,0.15) !important;
+            color: var(--platinum-2) !important;
+        }
+
+        /* ===== TODAY MILESTONE ===== */
+        .milestone-card.today {
+            border-color: rgba(16,185,129,0.3);
+            box-shadow: 0 0 40px rgba(16,185,129,0.1);
+        }
+
+        /* ===== INFO SECTION ===== */
+        .info-section {
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .info-section h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+
+        .info-item .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .info-item .label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: var(--accent-3);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                padding: 24px;
+            }
+
+            .milestone-card {
+                padding: 20px;
+            }
+
+            .milestone-date {
+                font-size: 1.3rem;
+            }
+
+            .milestone-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .milestone-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ===== LOADING SHIMMER ===== */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== ERROR ===== */
+        .error-msg {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: #fca5a5;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error-msg.visible {
+            display: block;
+            animation: fadeSlideUp 0.3s ease-out;
+        }
+
+        /* ===== SEC-LEAP INDICATOR ===== */
+        .leap-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .leap-info svg {
+            width: 14px;
+            height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-animation">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">⏱️</div>
+            <h1>Miliarda sekund</h1>
+            <p>Zadejte datum narození a zjistěte přesné datum a čas, kdy dosáhnete životního milníku jedné, dvou a tří miliard sekund.</p>
+        </header>
+
+        <!-- Form -->
+        <div class="form-card">
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="birthDate">📅 Datum narození</label>
+                    <input type="date" id="birthDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthTime">🕐 Čas narození <span class="optional-badge">volitelné</span></label>
+                    <input type="time" id="birthTime" step="1">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" id="calculateBtn" onclick="calculate()">
+                    <span>Vypočítat milníky</span>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+                <button class="btn btn-secondary" onclick="resetForm()" title="Vymazat">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+                </button>
+            </div>
+
+            <div class="leap-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                Výpočet zohledňuje přestupné roky i přestupné sekundy
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2>🎯 Vaše životní milníky</h2>
+                <p id="resultsSummary"></p>
+            </div>
+
+            <div class="milestone-grid" id="milestoneGrid">
+                <!-- Cards will be injected here -->
+            </div>
+
+            <div class="countdown-section" id="countdownSection">
+                <div class="countdown-card">
+                    <div class="countdown-label">⏳ Odpočet do dalšího milníku</div>
+                    <div class="countdown-value" id="countdownValue">—</div>
+                    <div class="countdown-sub" id="countdownSub"></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>📊 Přehled</h3>
+                <div class="info-grid" id="infoGrid">
+                    <!-- Injected -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Vytvořeno s ❤️ pro všechny, kdo chtějí znát svůj čas.</p>
+            <p style="margin-top:4px;">Výpočet používá JavaScript <code>Date</code> API, které automaticky zohledňuje přestupné roky i přestupné sekundy (leap seconds).</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== CONFIG =====
+        const BILLION = 1_000_000_000;
+        const MILESTONES = [
+            { label: '1 miliarda sekund', seconds: BILLION, icon: '🥇', type: 'gold', ageYears: '~31,7 let' },
+            { label: '2 miliardy sekund', seconds: BILLION * 2, icon: '🥈', type: 'platinum', ageYears: '~63,4 let' },
+            { label: '3 miliardy sekund', seconds: BILLION * 3, icon: '🥉', type: 'emerald', ageYears: '~95,1 let' },
+        ];
+
+        let countdownInterval = null;
+        let nextMilestoneDate = null;
+
+        // ===== HELPERS =====
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), 5000);
+        }
+
+        function formatDateCZ(date) {
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            return date.toLocaleDateString('cs-CZ', options);
+        }
+
+        function formatTimeCZ(date) {
+            return date.toLocaleTimeString('cs-CZ', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+
+        function formatDateShort(date) {
+            return date.toLocaleDateString('cs-CZ', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+
+        function getDayOfWeek(date) {
+            return date.toLocaleDateString('cs-CZ', { weekday: 'long' });
+        }
+
+        function ageAtDate(birth, target) {
+            const diffMs = target - birth;
+            const years = Math.floor(diffMs / (365.2425 * 24 * 60 * 60 * 1000));
+            const remainMs = diffMs - years * 365.2425 * 24 * 60 * 60 * 1000;
+            const months = Math.floor(remainMs / (30.436875 * 24 * 60 * 60 * 1000));
+            const remainMs2 = remainMs - months * 30.436875 * 24 * 60 * 60 * 1000;
+            const days = Math.floor(remainMs2 / (24 * 60 * 60 * 1000));
+            return { years, months, days };
+        }
+
+        function formatDuration(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const d = Math.floor(seconds / 86400);
+            const h = Math.floor((seconds % 86400) / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            return { d, h, m, s };
+        }
+
+        function formatDurationText(ms) {
+            const { d, h, m, s } = formatDuration(ms);
+            const parts = [];
+            if (d > 0) parts.push(`${d} dní`);
+            if (h > 0) parts.push(`${h} hodin`);
+            if (m > 0) parts.push(`${m} minut`);
+            if (s > 0) parts.push(`${s} sekund`);
+            return parts.join(', ');
+        }
+
+        // ===== MAIN CALCULATION =====
+        function calculate() {
+            // Clear previous
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            const dateInput = document.getElementById('birthDate').value;
+            const timeInput = document.getElementById('birthTime').value;
+
+            if (!dateInput) {
+                showError('⚠️ Prosím, zadejte datum narození.');
+                return;
+            }
+
+            // Parse birth datetime
+            // We construct the date carefully to avoid timezone issues
+            const [year, month, day] = dateInput.split('-').map(Number);
+
+            let birthDate;
+            if (timeInput) {
+                const [hours, minutes, seconds] = timeInput.split(':').map(Number);
+                birthDate = new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0);
+            } else {
+                // Default to midnight (00:00:00)
+                birthDate = new Date(year, month - 1, day, 0, 0, 0);
+            }
+
+            if (isNaN(birthDate.getTime())) {
+                showError('⚠️ Neplatné datum. Zkontrolujte prosím vstup.');
+                return;
+            }
+
+            // Check future date
+            if (birthDate > new Date()) {
+                showError('⚠️ Datum narození nemůže být v budoucnosti.');
+                return;
+            }
+
+            // Calculate milestones
+            const grid = document.getElementById('milestoneGrid');
+            grid.innerHTML = '';
+
+            const now = new Date();
+            const hasTime = !!timeInput;
+            let futureMilestones = [];
+
+            MILESTONES.forEach((m, index) => {
+                const targetTime = birthDate.getTime() + m.seconds * 1000;
+                const targetDate = new Date(targetTime);
+                const isPast = targetDate <= now;
+                const isToday = targetDate.toDateString() === now.toDateString();
+                const age = ageAtDate(birthDate, targetDate);
+                const totalDays = Math.floor((targetDate - birthDate) / (24 * 60 * 60 * 1000));
+
+                if (!isPast) {
+                    futureMilestones.push({ date: targetDate, label: m.label, index });
+                }
+
+                const card = document.createElement('div');
+                card.className = `milestone-card ${m.type}${isPast ? ' past' : ''}${isToday ? ' today' : ''}`;
+                card.style.animationDelay = `${index * 0.1}s`;
+
+                const dayOfWeek = getDayOfWeek(targetDate);
+
+                card.innerHTML = `
+                    <div class="milestone-top">
+                        <div class="milestone-label">
+                            <div class="milestone-icon">${m.icon}</div>
+                            <div>
+                                <div class="milestone-title">${m.label}</div>
+                                <div class="milestone-subtitle">Věk: ${age.years} let, ${age.months} měsíců, ${age.days} dní</div>
+                            </div>
+                        </div>
+                        <span class="milestone-badge ${isPast ? 'past-badge' : ''}">
+                            ${isToday ? '🎉 DNES!' : isPast ? '✓ Již uplynulo' : 'Budoucnost'}
+                        </span>
+                    </div>
+                    <div class="milestone-date">${formatDateCZ(targetDate)}</div>
+                    <div class="milestone-time">${dayOfWeek} · ${formatTimeCZ(targetDate)}${!hasTime ? ' (předpoklad 00:00)' : ''}</div>
+                    <div class="milestone-details">
+                        <div class="detail-item">
+                            <div class="detail-value">${totalDays.toLocaleString('cs-CZ')}</div>
+                            <div class="detail-label">Celkem dní</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">${age.years}</div>
+                            <div class="detail-label">Roků</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">${formatDateShort(targetDate)}</div>
+                            <div class="detail-label">Datum</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-value">${formatTimeCZ(targetDate)}</div>
+                            <div class="detail-label">Čas</div>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            // Summary
+            const summaryEl = document.getElementById('resultsSummary');
+            summaryEl.textContent = `Narozeni: ${formatDateCZ(birthDate)}${hasTime ? ' v ' + formatTimeCZ(birthDate) : ''}`;
+
+            // Info section
+            const infoGrid = document.getElementById('infoGrid');
+            const totalAgeSec = Math.floor((now - birthDate) / 1000);
+            const totalAgeDays = Math.floor((now - birthDate) / (24 * 60 * 60 * 1000));
+            const currentAge = ageAtDate(birthDate, now);
+
+            infoGrid.innerHTML = `
+                <div class="info-item">
+                    <div class="value">${currentAge.years} let</div>
+                    <div class="label">Váš aktuální věk</div>
+                </div>
+                <div class="info-item">
+                    <div class="value">${totalAgeSec.toLocaleString('cs-CZ')}</div>
+                    <div class="label">Sekund naživu</div>
+                </div>
+                <div class="info-item">
+                    <div class="value">${(totalAgeSec / BILLION).toFixed(4)}</div>
+                    <div class="label">Miliardy sekund</div>
+                </div>
+                <div class="info-item">
+                    <div class="value">${totalAgeDays.toLocaleString('cs-CZ')}</div>
+                    <div class="label">Celkem dní</div>
+                </div>
+            `;
+
+            // Countdown to next milestone
+            const countdownSection = document.getElementById('countdownSection');
+            if (futureMilestones.length > 0) {
+                countdownSection.style.display = 'block';
+                // Sort by date ascending
+                futureMilestones.sort((a, b) => a.date - b.date);
+                const next = futureMilestones[0];
+                nextMilestoneDate = next.date;
+
+                function updateCountdown() {
+                    const remaining = nextMilestoneDate - new Date();
+                    if (remaining <= 0) {
+                        document.getElementById('countdownValue').textContent = '🎉 Milník nastal!';
+                        document.getElementById('countdownSub').textContent = next.label;
+                        clearInterval(countdownInterval);
+                        return;
+                    }
+                    document.getElementById('countdownValue').textContent = formatDurationText(remaining);
+                    document.getElementById('countdownSub').textContent = `do ${next.label} — ${formatDateCZ(nextMilestoneDate)}`;
+                }
+
+                updateCountdown();
+                countdownInterval = setInterval(updateCountdown, 1000);
+            } else {
+                countdownSection.style.display = 'none';
+            }
+
+            // Show results
+            const resultsEl = document.getElementById('results');
+            resultsEl.classList.add('visible');
+
+            // Scroll to results
+            setTimeout(() => {
+                resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        function resetForm() {
+            document.getElementById('birthDate').value = '';
+            document.getElementById('birthTime').value = '';
+            document.getElementById('results').classList.remove('visible');
+            document.getElementById('errorMsg').classList.remove('visible');
+            if (countdownInterval) clearInterval(countdownInterval);
+        }
+
+        // Allow Enter key to trigger calculation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const active = document.activeElement;
+                if (active && (active.id === 'birthDate' || active.id === 'birthTime')) {
+                    calculate();
+                }
+            }
+        });
+
+        // Set max date for date input to today
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        document.getElementById('birthDate').setAttribute('max', todayStr);
+    </script>
+</body>
+>>>>>>> 8008d601623e87616531c7787ebdd7352fc99101
 </html>
