@@ -553,3 +553,39 @@ select option:hover, select option:checked, select option:focus {
 #globeCanvas { display: block; }
 #mapContainer { display: none; }
 #mapContainer svg { display: block; }
+
+/* Tooltip tabulka - lepší formátování */
+.tooltip table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+.tooltip th {
+  text-align: left;
+  color: #94a3b8;
+  padding: 2px 0 6px 0;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.tooltip td {
+  padding: 2px 0;
+}
+.tooltip td:first-child {
+  color: #94a3b8;
+  padding-right: 8px;
+}
+.tooltip td:last-child {
+  text-align: right;
+  color: #f1f5f9;
+  font-weight: 500;
+}
+.tooltip .delta-pos { color: #34d399 !important; font-weight: 600; }
+.tooltip .delta-neg { color: #f87171 !important; font-weight: 600; }
+.tooltip p {
+  margin: 8px 0 0 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 6px;
+}

@@ -76,15 +76,16 @@
       <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Načítám...</span></div>
       <div class="legend" id="legend"></div>
 
-      <div class="info-panel">
+        <div class="info-panel">
         <h4>💡 Ovládání</h4>
         <ul>
-          <li><strong>Klikněte na zemi</strong> pro detailní tabulku všech let a proměnných</li>
-          <li><strong>Táhněte myší</strong> pro otáčení / posun, <strong>kolečko</strong> pro zoom</li>
-          <li><strong>Mapa je nekonečná</strong> – posouvejte doleva/doprava bez okrajů</li>
-          <li>Pro vlastní data vytvořte <code>data.json</code> ve složce aplikace</li>
+            <li><strong>Klikněte na zemi</strong> pro detail: v režimu porovnání uvidíte 2 roky + změnu, v běžném režimu 5 let (aktuální ±2)</li>
+            <!-- ostatní body zůstanou stejné -->
+            <li><strong>Táhněte myší</strong> pro otáčení / posun, <strong>kolečko</strong> pro zoom</li>
+            <li><strong>Mapa je nekonečná</strong> – posouvejte doleva/doprava bez okrajů</li>
+            <li>Pro vlastní data vytvořte <code>data.json</code> ve složce aplikace</li>
         </ul>
-      </div>
+        </div>
     </div>
   </div>
 
@@ -660,38 +661,106 @@ function populateVariableDropdown() {
     }
 
     function showCountryDetail(e, props) {
-      const tt = document.getElementById('tooltip');
-      const code = props.code;
+  const tt = document.getElementById('tooltip');
+  const code = props.code;
+  
+  let html = `<h4>${props.name}</h4><table>`;
+  
+  // Získáme data pro aktuálně vybranou proměnnou a zemi
+  const variable = currentVariable;
+  const data = WORLD_DATA[variable]?.[code];
+  
+  // Hlavička proměnné
+  html += `<tr><th colspan="2" style="padding-top:6px;color:#a78bfa;font-size:0.8rem;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;">${getVariableLabel(variable)}</th></tr>`;
+  
+  if(typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    // 📊 Data mají roky (časová řada)
+    const availableYears = Object.keys(data).map(y => +y).sort((a,b) => a-b);
+    
+    if(isCompareMode) {
+      // 🔍 REŽIM POROVNÁNÍ: zobrazíme pouze 2 vybrané roky + delta
+      const yearFrom = +document.getElementById('yearFrom').value;
+      const yearTo = +document.getElementById('yearTo').value;
       
-      let html = `<h4>${props.name}</h4><table>`;
+      let hasData = false;
       
-      Object.entries(WORLD_DATA).forEach(([k, data]) => {
-        const v = data[code];
-        html += `<tr><th colspan="2" style="padding-top:6px;color:#a78bfa;font-size:0.8rem;">${getVariableLabel(k)}</th></tr>`;
-        
-        if(typeof v === 'object') {
-          Object.entries(v).forEach(([y, val]) => {
-            html += `<tr><td>${y}</td><td style="color:var(--text-primary)">${formatValue(val,k)}</td></tr>`;
-          });
-          // Delta
-          const entries = Object.entries(v);
-          if(entries.length >= 2) {
-            const d = entries[entries.length-1][1] - entries[0][1];
-            const cls = d>=0?'delta-pos':'delta-neg';
-            html += `<tr><td style="font-size:0.75rem;color:var(--text-muted)">Δ</td><td class="${cls}">${d>=0?'+':''}${formatValue(d,'delta')}</td></tr>`;
-          }
-        } else if(v !== undefined) {
-          html += `<tr><td colspan="2" style="color:var(--text-primary)">${formatValue(v,k)}</td></tr>`;
-        } else {
-          html += `<tr><td colspan="2" style="color:var(--text-muted)">Není k dispozici</td></tr>`;
+      // Zobrazíme oba roky (pokud existují)
+      [yearFrom, yearTo].forEach(year => {
+        if(data[year] !== undefined && data[year] !== null) {
+          html += `<tr><td style="padding:3px 0">${year}</td><td style="text-align:right;padding:3px 0 3px 12px;color:var(--text-primary)">${formatValue(data[year], variable)}</td></tr>`;
+          hasData = true;
         }
       });
       
-      html += '</table>';
-      tt.innerHTML = html;
-      tt.classList.add('visible');
-      moveTooltip(e);
+      // Delta mezi roky (pokud máme oba)
+      if(data[yearFrom] !== undefined && data[yearTo] !== undefined && data[yearFrom] !== null && data[yearTo] !== null) {
+        const delta = data[yearTo] - data[yearFrom];
+        const cls = delta >= 0 ? 'delta-pos' : 'delta-neg';
+        const sign = delta >= 0 ? '+' : '';
+        html += `<tr><td colspan="2" style="padding-top:6px;border-top:1px solid rgba(255,255,255,0.1)"><span style="font-size:0.75rem;color:var(--text-muted)">Změna (${yearFrom}→${yearTo}):</span> <span class="${cls}" style="font-weight:600">${sign}${formatValue(delta, 'delta')}</span></td></tr>`;
+      }
+      
+      if(!hasData) {
+        html += `<tr><td colspan="2" style="color:var(--text-muted);font-style:italic">Data nejsou k dispozici</td></tr>`;
+      }
+      
+    } else {
+      // 📅 REŽIM JEDNOHO ROKU: zobrazíme 5 let (aktuální ±2, fallback na starší)
+      const currentYear = +document.getElementById('yearFrom').value;
+      let yearsToShow = [];
+      
+      // 1. Pokusíme se najít 2 roky před, aktuální, 2 roky po
+      for(let offset = -2; offset <= 2; offset++) {
+        const y = currentYear + offset;
+        if(availableYears.includes(y) && !yearsToShow.includes(y)) {
+          yearsToShow.push(y);
+        }
+      }
+      
+      // 2. Pokud nemáme 5 let, doplníme staršími roky (od nejnovějšího směrem dozadu)
+      if(yearsToShow.length < 5) {
+        for(let i = availableYears.length - 1; i >= 0 && yearsToShow.length < 5; i--) {
+          const y = availableYears[i];
+          if(!yearsToShow.includes(y)) {
+            yearsToShow.unshift(y); // Přidáme na začátek, aby byly chronologicky
+          }
+        }
+      }
+      
+      // 3. Ořízneme na max 5 let a zobrazíme
+      yearsToShow.slice(0, 5).sort((a,b) => a-b).forEach(year => {
+        if(data[year] !== undefined && data[year] !== null) {
+          // Zvýrazníme aktuálně vybraný rok
+          const isCurrent = year === currentYear;
+          html += `<tr><td style="padding:3px 0${isCurrent ? ';font-weight:600;color:var(--accent-3)' : ''}">${year}${isCurrent ? ' ●' : ''}</td><td style="text-align:right;padding:3px 0 3px 12px;color:var(--text-primary)">${formatValue(data[year], variable)}</td></tr>`;
+        }
+      });
+      
+      if(yearsToShow.length === 0) {
+        html += `<tr><td colspan="2" style="color:var(--text-muted);font-style:italic">Data nejsou k dispozici</td></tr>`;
+      }
     }
+    
+  } else if(data !== undefined && data !== null) {
+    // 🔒 Statická data bez časové řady (např. rozloha)
+    html += `<tr><td colspan="2" style="color:var(--text-primary);padding:4px 0">${formatValue(data, variable)}</td></tr>`;
+    
+  } else {
+    // ❌ Žádná data pro tuto zemi
+    html += `<tr><td colspan="2" style="color:var(--text-muted);font-style:italic;padding:4px 0">Data nejsou k dispozici</td></tr>`;
+  }
+  
+  html += '</table>';
+  
+  // Přidáme hint pro uživatele
+  html += `<p style="margin-top:8px;font-size:0.7rem;color:var(--text-muted);border-top:1px solid rgba(255,255,255,0.1);padding-top:6px">
+    ${isCompareMode ? '🔍 Porovnání: vybrané 2 roky + změna' : '📅 Zobrazeno 5 let (aktuální ±2)'}
+  </p>`;
+  
+  tt.innerHTML = html;
+  tt.classList.add('visible');
+  moveTooltip(e);
+}
 
     function moveTooltip(e) {
       const tt = document.getElementById('tooltip');
