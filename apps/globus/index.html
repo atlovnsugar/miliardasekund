@@ -455,85 +455,126 @@ function populateVariableDropdown() {
 
     // ===== 2D MAPA (Mercator, nekonečná, správný poměr) =====
     function initMap() {
-      const c = document.getElementById('mapContainer');
-      c.innerHTML = '';
-      const w = c.clientWidth||800, h = c.clientHeight||550;
-      
-      mapSvg = d3.select(c).append('svg')
-        .attr('width', w).attr('height', h)
-        .attr('viewBox', `0 0 ${w} ${h}`)
-        .attr('preserveAspectRatio', 'xMidYMid meet');
-      
-      mapG = mapSvg.append('g');
-      
-      // ✅ Mercator projekce se správným poměrem stran
-      mapProjection = d3.geoMercator()
-        .scale(w / 6.2)
-        .translate([w/2, h/2 + h*0.05]);
-      
-      mapPath = d3.geoPath().projection(mapProjection);
+        const c = document.getElementById('mapContainer');
+        c.innerHTML = '';
+        const w = c.clientWidth||800, h = c.clientHeight||550;
+        
+        mapSvg = d3.select(c).append('svg')
+            .attr('width', w).attr('height', h)
+            .attr('viewBox', `0 0 ${w} ${h}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('cursor', 'grab');
+        
+        mapG = mapSvg.append('g');
+        
+        // ✅ Mercator projekce se správným poměrem stran
+        mapProjection = d3.geoMercator()
+            .scale(w / 6.2)
+            .translate([w/2, h/2 + h*0.05]);
+        
+        mapPath = d3.geoPath().projection(mapProjection);
 
-      // 🔄 Nekonečná mapa: 3 kopie světa (-360°, 0°, +360°)
-      const features = [];
-      geoData.features.forEach(f => {
-        // Originál
-        features.push({...f, properties: {...f.properties, _offset: 0}});
-        // Kopie +360°
-        const f1 = JSON.parse(JSON.stringify(f));
-        f1.properties = {...f.properties, _offset: 360};
-        f1.geometry = shiftGeometry(f1.geometry, 360);
-        features.push(f1);
-        // Kopie -360°
-        const f2 = JSON.parse(JSON.stringify(f));
-        f2.properties = {...f.properties, _offset: -360};
-        f2.geometry = shiftGeometry(f2.geometry, -360);
-        features.push(f2);
-      });
-
-      // Vykreslit země
-      mapCountries = {};
-      mapG.selectAll('path')
-        .data(features)
-        .enter()
-        .append('path')
-        .attr('d', mapPath)
-        .attr('class', 'country-path')
-        .attr('fill', d => getCountryColor(d.properties.code))
-        .attr('stroke', 'rgba(255,255,255,0.3)')
-        .attr('stroke-width', 0.8)
-        .style('cursor', 'pointer')
-        .on('mouseenter', function(e, d) {
-          showTooltipHtml(e, d.properties);
-          d3.select(this).raise().attr('stroke', '#fff').attr('stroke-width', 1.5);
-        })
-        .on('mousemove', e => moveTooltip(e))
-        .on('mouseleave', function() {
-          hideTooltip();
-          d3.select(this).attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 0.8);
-        })
-        .on('click', function(e, d) {
-          e.stopPropagation();
-          showCountryDetail(e, d.properties);
+        // 🔄 Nekonečná mapa: 3 kopie světa (-360°, 0°, +360°)
+        const features = [];
+        geoData.features.forEach(f => {
+            features.push({...f, properties: {...f.properties, _offset: 0}});
+            const f1 = JSON.parse(JSON.stringify(f));
+            f1.properties = {...f.properties, _offset: 360};
+            f1.geometry = shiftGeometry(f1.geometry, 360);
+            features.push(f1);
+            const f2 = JSON.parse(JSON.stringify(f));
+            f2.properties = {...f.properties, _offset: -360};
+            f2.geometry = shiftGeometry(f2.geometry, -360);
+            features.push(f2);
         });
 
-      // 🔄 Zoom + pan s nekonečným wrappingem
-      let currentTransform = d3.zoomIdentity;
-      
-      mapSvg.call(d3.zoom()
-        .scaleExtent([0.5, 8])
-        .translateExtent([[-w, -h], [w*2, h*2]])
-        .on('zoom', (event) => {
-          currentTransform = event.transform;
-          // Nekonečný posun: modulo šířka světa
-          const worldWidth = 4096 / currentTransform.k;
-          let x = currentTransform.x % worldWidth;
-          if(x < -worldWidth/2) x += worldWidth;
-          if(x > worldWidth/2) x -= worldWidth;
-          
-          mapG.attr('transform', `translate(${x}, ${currentTransform.y}) scale(${currentTransform.k})`);
-        })
-      );
-    }
+        // 🎯 Trackování pro rozlišení click vs drag
+        let isDragging = false;
+        let dragStart = null;
+
+        // Vykreslit země
+        mapCountries = {};
+        mapG.selectAll('path')
+            .data(features)
+            .enter()
+            .append('path')
+            .attr('d', mapPath)
+            .attr('class', 'country-path')
+            .attr('fill', d => getCountryColor(d.properties.code))
+            .attr('stroke', 'rgba(255,255,255,0.3)')
+            .attr('stroke-width', 0.8)
+            .style('cursor', 'pointer')
+            .style('pointer-events', 'all') // ✅ Zajistí, že země přijímají události
+            .on('mousedown', function() {
+            // Začátek potenciálního drag
+            isDragging = false;
+            dragStart = { x: d3.event?.x || event?.clientX, y: d3.event?.y || event?.clientY };
+            })
+            .on('mousemove', function() {
+            // Pokud se myš pohnula >3px, považujeme to za drag
+            if(dragStart) {
+                const dx = Math.abs((d3.event?.x || event?.clientX) - dragStart.x);
+                const dy = Math.abs((d3.event?.y || event?.clientY) - dragStart.y);
+                if(dx > 3 || dy > 3) isDragging = true;
+            }
+            })
+            .on('mouseenter', function(e, d) {
+            if(!isDragging) showTooltipHtml(e, d.properties);
+            d3.select(this).raise().attr('stroke', '#fff').attr('stroke-width', 1.5);
+            })
+            .on('mousemove', function(e) {
+            if(!isDragging) moveTooltip(e);
+            })
+            .on('mouseleave', function() {
+            hideTooltip();
+            d3.select(this).attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 0.8);
+            })
+            .on('mouseup', function(e, d) {
+            // ✅ Kliknutí (ne drag) → zobraz detail
+            if(!isDragging) {
+                console.log('🖱️ Kliknuto na:', d.properties.name);
+                e.stopPropagation();
+                showCountryDetail(e, d.properties);
+            }
+            dragStart = null;
+            })
+            .on('click', function(e) {
+            // ✅ Zabrání duplicitnímu spuštění (mouseup už zpracoval)
+            e.stopPropagation();
+            });
+
+        // 🔄 Zoom + pan s nekonečným wrappingem
+        let currentTransform = d3.zoomIdentity;
+        
+        // ✅ DŮLEŽITÉ: clickDistance(3) umožňuje kliknutí při minimálním pohybu
+        const zoomBehavior = d3.zoom()
+            .clickDistance(3)
+            .scaleExtent([0.5, 8])
+            .translateExtent([[-w, -h], [w*2, h*2]])
+            .on('start', () => { 
+            isDragging = true; 
+            mapSvg.style('cursor', 'grabbing');
+            })
+            .on('zoom', (event) => {
+            currentTransform = event.transform;
+            const worldWidth = 4096 / currentTransform.k;
+            let x = currentTransform.x % worldWidth;
+            if(x < -worldWidth/2) x += worldWidth;
+            if(x > worldWidth/2) x -= worldWidth;
+            mapG.attr('transform', `translate(${x}, ${currentTransform.y}) scale(${currentTransform.k})`);
+            })
+            .on('end', () => { 
+            setTimeout(() => { isDragging = false; }, 50); 
+            mapSvg.style('cursor', 'grab');
+            });
+        
+        mapSvg.call(zoomBehavior);
+        
+        // ✅ Dvojklik pro reset zoomu
+        mapSvg.on('dblclick', function() {
+            mapSvg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+        });
+        }
 
     function shiftGeometry(geom, dx) {
       if(!geom) return geom;
@@ -849,6 +890,20 @@ function populateVariableDropdown() {
       if(animationId) cancelAnimationFrame(animationId);
       if(renderer) renderer.dispose();
     });
+
+    // 🧪 Debug: Sledujte události na mapě
+document.addEventListener('DOMContentLoaded', () => {
+  const mapContainer = document.getElementById('mapContainer');
+  
+  mapContainer.addEventListener('click', (e) => {
+    if(e.target.classList.contains('country-path')) {
+      console.log('✅ Click na zemi:', e.target.__data__?.properties?.name);
+    }
+  });
+  
+  mapContainer.addEventListener('mousedown', () => console.log('🖱️ mousedown'));
+  mapContainer.addEventListener('mouseup', () => console.log('🖱️ mouseup'));
+});
   </script>
 </body>
 </html>
