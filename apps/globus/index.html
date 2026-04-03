@@ -9,17 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  
-  <style>
-    /* Minimální specifické styly */
-    .texture-canvas { display: none; }
-    .tooltip-content { pointer-events: auto; }
-    .tooltip-content table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
-    .tooltip-content th { text-align: left; color: #94a3b8; padding: 2px 0; font-weight: 500; }
-    .tooltip-content td { text-align: right; padding: 2px 0 2px 12px; }
-    .tooltip-content .delta-pos { color: #34d399; font-weight: 600; }
-    .tooltip-content .delta-neg { color: #f87171; font-weight: 600; }
-  </style>
 </head>
 <body>
   <div class="bg-animation"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
@@ -30,7 +19,7 @@
     <header>
       <div class="logo">🌍</div>
       <h1>Interaktivní 3D Globus</h1>
-      <p>Prozkoumejte svět v 3D, vizualizujte data, porovnávejte roky a sledujte změny v čase.</p>
+      <p>Prozkoumejte svět, vizualizujte data, porovnávejte roky a sledujte změny v čase.</p>
     </header>
 
     <div class="globe-container">
@@ -42,12 +31,7 @@
       <div class="canvas-wrapper">
         <div id="globeCanvas"></div>
         <div id="mapContainer"></div>
-        <div class="tooltip hidden" id="tooltip">
-          <div class="tooltip-content" id="tooltipContent"></div>
-        </div>
-        <!-- Skryté plátno pro texturu globu -->
-        <canvas id="globeTextureCanvas" class="texture-canvas" width="2048" height="1024"></canvas>
-        
+        <div class="tooltip" id="tooltip"></div>
         <div class="loading-overlay" id="loadingOverlay">
           <div class="spinner"></div>
           <div>Načítám data...</div>
@@ -57,12 +41,7 @@
       <div class="controls-panel">
         <div class="control-group">
           <label for="variableSelect">📊 Proměnná</label>
-          <select id="variableSelect" onchange="updateVisualization()">
-            <option value="population">Počet obyvatel</option>
-            <option value="gdp">HDP (mld. USD)</option>
-            <option value="area">Rozloha (tis. km²)</option>
-            <option value="lifeExpectancy">Naděje dožití (roky)</option>
-          </select>
+          <select id="variableSelect" onchange="updateVisualization()"></select>
         </div>
 
         <div class="control-group">
@@ -73,142 +52,106 @@
             <option value="orange">Žlutá → Oranžová</option>
             <option value="gray">Šedá</option>
           </select>
-          <div class="color-scale-preview">
-            <div class="color-bar" id="colorBar"></div>
-          </div>
-          <div class="color-labels">
-            <span id="colorMin">—</span>
-            <span id="colorMax">—</span>
-          </div>
+          <div class="color-scale-preview"><div class="color-bar" id="colorBar"></div></div>
+          <div class="color-labels"><span id="colorMin">—</span><span id="colorMax">—</span></div>
         </div>
 
         <div class="control-group">
           <label>🔍 Režim</label>
-          <label class="checkbox-group">
-            <input type="checkbox" id="compareMode" onchange="toggleCompareMode()">
-            Porovnání mezi roky
-          </label>
-          <div class="year-selector-row" id="yearSelectors" style="display:none; margin-top: 8px;">
-            <select id="yearFrom" onchange="updateVisualization()">
-              <option value="2000">2000</option>
-              <option value="2005">2005</option>
-              <option value="2010">2010</option>
-              <option value="2015">2015</option>
-              <option value="2020">2020</option>
-            </select>
-            <span class="year-compare-label" style="color:var(--text-muted); margin:0 4px;">→</span>
-            <select id="yearTo" onchange="updateVisualization()">
-              <option value="2005">2005</option>
-              <option value="2010">2010</option>
-              <option value="2015">2015</option>
-              <option value="2020">2020</option>
-              <option value="2023" selected>2023</option>
-            </select>
+          <label class="checkbox-group"><input type="checkbox" id="compareMode" onchange="toggleCompareMode()"> Porovnání mezi roky</label>
+          <div class="year-selector-row" id="yearSelectors" style="display:none; margin-top: 8px; gap: 6px;">
+            <select id="yearFrom" onchange="updateVisualization()" style="flex:1;"></select>
+            <span style="color:var(--text-muted); align-self:center;">→</span>
+            <select id="yearTo" onchange="updateVisualization()" style="flex:1;"></select>
           </div>
         </div>
 
         <div class="control-group">
           <label>⚙️ Nastavení</label>
-          <label class="checkbox-group">
-            <input type="checkbox" id="autoRotate" checked onchange="toggleAutoRotate()">
-            Auto-rotace
-          </label>
-          <label class="checkbox-group">
-            <input type="checkbox" id="showLabels" checked onchange="updateVisualization()">
-            Popisky na globu
-          </label>
+          <label class="checkbox-group"><input type="checkbox" id="autoRotate" checked onchange="toggleAutoRotate()"> Auto-rotace</label>
+          <label class="checkbox-group"><input type="checkbox" id="showLabels" checked onchange="updateVisualization()"> Popisky na globu</label>
         </div>
       </div>
 
-      <div class="status-bar">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Načítám...</span>
-      </div>
-
-      <div class="legend" id="legend">
-        <span class="legend-dot" style="background:#0d47a1"></span> Nízké
-        <span class="legend-dot" style="background:#b71c1c"></span> Vysoké
-      </div>
+      <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Načítám...</span></div>
+      <div class="legend" id="legend"></div>
 
       <div class="info-panel">
         <h4>💡 Ovládání</h4>
         <ul>
-          <li><strong>Klikněte na zemi</strong> pro detailní přehled všech proměnných a let</li>
-          <li><strong>Táhněte myší</strong> pro otáčení / posun</li>
-          <li><strong>Kolečko myši</strong> pro zoom</li>
-          <li><strong>Zaškrtněte "Porovnání"</strong> pro zobrazení změn mezi roky</li>
-          <li>Pro vlastní data stačí vytvořit soubor <code>data.json</code> ve stejné složce</li>
+          <li><strong>Klikněte na zemi</strong> pro detailní tabulku všech let a proměnných</li>
+          <li><strong>Táhněte myší</strong> pro otáčení / posun, <strong>kolečko</strong> pro zoom</li>
+          <li><strong>Mapa je nekonečná</strong> – posouvejte doleva/doprava bez okrajů</li>
+          <li>Pro vlastní data vytvořte <code>data.json</code> ve složce aplikace</li>
         </ul>
       </div>
     </div>
   </div>
 
-  <footer>
-    <p>Data: Světová banka, Natural Earth · Vytvořeno s ❤️</p>
-  </footer>
+  <footer><p>Data: Světová banka, Natural Earth · Vytvořeno s ❤️</p></footer>
 
   <script>
-    // ===== DATA & KONFIGURACE =====
-    const WORLD_DATA = {
+    // ===== DEFAULT DATA =====
+    const DEFAULT_DATA = {
       population: {
-        CZE: { 2000: 10.2, 2005: 10.3, 2010: 10.5, 2015: 10.6, 2020: 10.7, 2023: 10.8 },
-        SVK: { 2000: 5.4, 2005: 5.4, 2010: 5.4, 2015: 5.4, 2020: 5.5, 2023: 5.5 },
-        DEU: { 2000: 82.2, 2005: 82.4, 2010: 81.8, 2015: 82.2, 2020: 83.2, 2023: 84.4 },
-        POL: { 2000: 38.3, 2005: 38.2, 2010: 38.0, 2015: 38.0, 2020: 37.8, 2023: 37.7 },
-        USA: { 2000: 282, 2005: 295, 2010: 309, 2015: 321, 2020: 331, 2023: 335 },
-        CHN: { 2000: 1267, 2005: 1303, 2010: 1338, 2015: 1371, 2020: 1402, 2023: 1411 },
-        IND: { 2000: 1053, 2005: 1133, 2010: 1234, 2015: 1310, 2020: 1380, 2023: 1428 },
-        BRA: { 2000: 174, 2005: 186, 2010: 196, 2015: 205, 2020: 213, 2023: 216 },
-        RUS: { 2000: 145, 2005: 143, 2010: 142, 2015: 144, 2020: 144, 2023: 146 },
-        JPN: { 2000: 127, 2005: 128, 2010: 128, 2015: 127, 2020: 126, 2023: 125 },
-        GBR: { 2000: 58.9, 2005: 60.2, 2010: 63.0, 2015: 65.4, 2020: 67.3, 2023: 68.0 },
-        FRA: { 2000: 59.0, 2005: 60.7, 2010: 62.8, 2015: 64.5, 2020: 65.3, 2023: 65.8 },
-        ITA: { 2000: 57.7, 2005: 58.6, 2010: 59.3, 2015: 60.8, 2020: 60.5, 2023: 59.5 },
-        ESP: { 2000: 40.5, 2005: 43.0, 2010: 46.0, 2015: 46.4, 2020: 47.4, 2023: 47.8 }
+        CZE: {2000:10.2,2005:10.3,2010:10.5,2015:10.6,2020:10.7,2023:10.8},
+        SVK: {2000:5.4,2005:5.4,2010:5.4,2015:5.4,2020:5.5,2023:5.5},
+        DEU: {2000:82.2,2005:82.4,2010:81.8,2015:82.2,2020:83.2,2023:84.4},
+        POL: {2000:38.3,2005:38.2,2010:38.0,2015:38.0,2020:37.8,2023:37.7},
+        USA: {2000:282,2005:295,2010:309,2015:321,2020:331,2023:335},
+        CHN: {2000:1267,2005:1303,2010:1338,2015:1371,2020:1402,2023:1411},
+        IND: {2000:1053,2005:1133,2010:1234,2015:1310,2020:1380,2023:1428},
+        BRA: {2000:174,2005:186,2010:196,2015:205,2020:213,2023:216}
       },
       gdp: {
-        CZE: { 2000: 65, 2005: 117, 2010: 199, 2015: 180, 2020: 246, 2023: 323 },
-        SVK: { 2000: 24, 2005: 49, 2010: 89, 2015: 88, 2020: 105, 2023: 134 },
-        DEU: { 2000: 1950, 2005: 2850, 2010: 3400, 2015: 3360, 2020: 3890, 2023: 4460 },
-        POL: { 2000: 170, 2005: 285, 2010: 465, 2015: 476, 2020: 600, 2023: 811 },
-        USA: { 2000: 10250, 2005: 13040, 2010: 14990, 2015: 18220, 2020: 21060, 2023: 27360 },
-        CHN: { 2000: 1210, 2005: 2290, 2010: 6090, 2015: 11060, 2020: 14690, 2023: 17960 },
-        IND: { 2000: 470, 2005: 835, 2010: 1680, 2015: 2100, 2020: 2670, 2023: 3730 },
-        BRA: { 2000: 655, 2005: 892, 2010: 2210, 2015: 1800, 2020: 1450, 2023: 2170 },
-        RUS: { 2000: 260, 2005: 764, 2010: 1525, 2015: 1364, 2020: 1483, 2023: 1862 },
-        JPN: { 2000: 4890, 2005: 4820, 2010: 5700, 2015: 4390, 2020: 4980, 2023: 4230 },
-        GBR: { 2000: 1650, 2005: 2390, 2010: 2440, 2015: 2890, 2020: 2710, 2023: 3330 },
-        FRA: { 2000: 1360, 2005: 2200, 2010: 2640, 2015: 2440, 2020: 2630, 2023: 3050 }
+        CZE: {2000:65,2005:117,2010:199,2015:180,2020:246,2023:323},
+        SVK: {2000:24,2005:49,2010:89,2015:88,2020:105,2023:134},
+        DEU: {2000:1950,2005:2850,2010:3400,2015:3360,2020:3890,2023:4460},
+        POL: {2000:170,2005:285,2010:465,2015:476,2020:600,2023:811},
+        USA: {2000:10250,2005:13040,2010:14990,2015:18220,2020:21060,2023:27360},
+        CHN: {2000:1210,2005:2290,2010:6090,2015:11060,2020:14690,2023:17960}
       },
-      area: {
-        CZE: 78.9, SVK: 49.0, DEU: 357.1, POL: 312.7, USA: 9833.5, CHN: 9596.9,
-        IND: 3287.3, BRA: 8515.8, RUS: 17098.2, JPN: 377.9, GBR: 243.6, FRA: 551.7,
-        ITA: 301.3, ESP: 506.0
-      },
-      lifeExpectancy: {
-        CZE: { 2000: 75.2, 2005: 76.2, 2010: 77.2, 2015: 78.5, 2020: 78.3, 2023: 79.0 },
-        SVK: { 2000: 73.5, 2005: 73.8, 2010: 74.8, 2015: 76.2, 2020: 75.5, 2023: 76.0 },
-        DEU: { 2000: 77.7, 2005: 78.6, 2010: 80.1, 2015: 80.6, 2020: 80.8, 2023: 81.0 },
-        POL: { 2000: 73.8, 2005: 74.7, 2010: 75.8, 2015: 77.3, 2020: 77.0, 2023: 77.5 },
-        USA: { 2000: 76.8, 2005: 77.3, 2010: 78.7, 2015: 78.7, 2020: 77.0, 2023: 77.5 },
-        CHN: { 2000: 71.4, 2005: 73.0, 2010: 74.8, 2015: 76.0, 2020: 77.4, 2023: 78.2 },
-        IND: { 2000: 62.5, 2005: 64.2, 2010: 66.1, 2015: 68.0, 2020: 69.8, 2023: 71.0 },
-        BRA: { 2000: 69.4, 2005: 71.0, 2010: 72.8, 2015: 74.5, 2020: 72.8, 2023: 75.0 },
-        RUS: { 2000: 65.3, 2005: 65.4, 2010: 68.7, 2015: 71.4, 2020: 72.6, 2023: 73.0 },
-        JPN: { 2000: 81.1, 2005: 82.1, 2010: 83.0, 2015: 83.8, 2020: 84.6, 2023: 84.8 }
-      }
+      area: { CZE:78.9, SVK:49.0, DEU:357.1, POL:312.7, USA:9833.5, CHN:9596.9, IND:3287.3, BRA:8515.8 },
+      lifeExpectancy: { CZE:{2000:75.2,2023:79.0}, SVK:{2000:73.5,2023:76.0}, DEU:{2000:77.7,2023:81.0}, USA:{2000:76.8,2023:77.5} }
     };
 
-    const NAME_TO_CODE = {
-      "Czechia": "CZE", "Czech Republic": "CZE", "Slovakia": "SVK", "Germany": "DEU",
-      "Poland": "POL", "United States of America": "USA", "United States": "USA",
-      "China": "CHN", "India": "IND", "Brazil": "BRA", "Russia": "RUS",
-      "Russian Federation": "RUS", "Japan": "JPN", "United Kingdom": "GBR",
-      "France": "FRA", "Italy": "ITA", "Spain": "ESP"
+    // 🧪 Debug funkce - spusťte v konzoli: debugLoadData()
+async function debugLoadData() {
+  console.log('🔬 Spouštím debugLoadData()...');
+  
+  // Zkontrolujte, zda soubor existuje
+  try {
+    const res = await fetch('./data.json?t=' + Date.now());
+    console.log('✅ data.json nalezeno, status:', res.status);
+    const json = await res.json();
+    console.log('📦 Obsah data.json:', json);
+    
+    // Zkontrolujte strukturu
+    if(typeof json === 'object' && !Array.isArray(json)) {
+      console.log('✅ JSON má platnou strukturu (objekt na nejvyšší úrovni)');
+      console.log('🔑 Klíče:', Object.keys(json));
+    } else {
+      console.error('❌ JSON nemá očekávanou strukturu! Měl by být objekt s proměnnými jako klíči.');
+    }
+  } catch(e) {
+    console.error('❌ Nelze načíst data.json:', e.message);
+    console.error('💡 Možné příčiny:');
+    console.error('   • Soubor neexistuje na serveru');
+    console.error('   • CORS blokuje načtení (při lokálním otevření file://)');
+    console.error('   • JSON má syntaktickou chybu');
+  }
+}
+
+    let WORLD_DATA = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    const NAME_TO_CODE = { 
+      "Czechia":"CZE","Czech Republic":"CZE","Slovakia":"SVK","Germany":"DEU","Poland":"POL",
+      "United States of America":"USA","United States":"USA","China":"CHN","India":"IND",
+      "Brazil":"BRA","Russia":"RUS","Russian Federation":"RUS","Japan":"JPN",
+      "United Kingdom":"GBR","France":"FRA","Italy":"ITA","Spain":"ESP" 
     };
 
     const CONFIG = {
-      globeRadius: 100, rotationSpeed: 0.001, autoRotatePauseTime: 3000,
+      globeRadius: 100, rotationSpeed: 0.0012, autoRotatePauseTime: 3000,
       colors: {
         blue: ['#0d47a1','#1976d2','#42a5f5','#90caf9','#e1f5fe','#fff9c4','#ffb74d','#ff9800','#e65100','#b71c1c'],
         green: ['#1b5e20','#2e7d32','#43a047','#66bb6a','#a5d6a7','#fff9c4','#ffb74d','#ff9800','#e65100','#880e4f'],
@@ -219,13 +162,12 @@
     };
 
     // Globální stav
-    let scene, camera, renderer, controls, globe, globeTextureCanvas, globeTextureCtx, globeTexture;
-    let geoData = null;
-    let currentView = 'globe', autoRotate = true, showLabels = true;
+    let scene, camera, renderer, controls, globe, globeTexture, globeTextureCanvas, ctx;
+    let geoData = null, currentView = 'globe', autoRotate = true, showLabels = true;
     let currentVariable = 'population', currentColorScale = 'blue', isCompareMode = false;
     let lastInteraction = 0, animationId = null;
     let raycaster, mouse;
-    let mapSvg, mapG, mapProjection, mapPath, mapZoom;
+    let mapSvg, mapG, mapProjection, mapPath, mapCountries = {};
 
     // ===== INICIALIZACE =====
     document.addEventListener('DOMContentLoaded', init);
@@ -233,6 +175,7 @@
     async function init() {
       try {
         updateStatus('Načítám mapová data...', 'loading');
+        
         const geoRes = await fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson');
         if (!geoRes.ok) throw new Error('GeoJSON chyba');
         geoData = await geoRes.json();
@@ -240,86 +183,195 @@
           f.properties.code = NAME_TO_CODE[f.properties.name] || f.properties.name.substring(0,3).toUpperCase();
         });
 
-        // Načtení externích dat
         await loadExternalData();
+        populateVariableDropdown();
+        populateYearSelectors();
 
-        // Inicializace komponent
         initGlobe();
         initMap();
         updateVisualization();
 
-        updateStatus('Připraveno — klikněte na zemi pro detaily', 'ready');
+        updateStatus('Připraveno', 'ready');
         document.getElementById('loadingOverlay').classList.add('hidden');
         animate();
       } catch (err) {
-        console.error(err);
+        console.error('Init error:', err);
         showError('Nepodařilo se načíst data. Zkontrolujte připojení.');
       }
     }
 
     async function loadExternalData() {
-      try {
-        const res = await fetch('./data.json');
-        if (res.ok) {
-          const ext = await res.json();
-          // Inteligentní merge
-          Object.keys(ext).forEach(key => {
-            if (typeof ext[key] === 'object' && !Array.isArray(ext[key])) {
-              WORLD_DATA[key] = { ...(WORLD_DATA[key] || {}), ...ext[key] };
+    console.log('🔍 Hledám data.json...');
+    
+    try {
+        // Zkusíme absolutní cestu relativně k aktuální URL
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        const paths = [
+        './data.json',           // relativní cesta
+        'data.json',             // bez ./
+        baseUrl + 'data.json',   // absolutní URL
+        window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/data.json') // fallback
+        ];
+        
+        let ext = null;
+        let loadedPath = null;
+        
+        for (const path of paths) {
+        try {
+            console.log(`📡 Zkouším: ${path}`);
+            const res = await fetch(path, { cache: 'no-store' }); // Vypnout cache pro ladění
+            
+            if (res.ok) {
+            const text = await res.text();
+            console.log('📄 Raw response:', text.substring(0, 200) + '...');
+            
+            ext = JSON.parse(text);
+            loadedPath = path;
+            console.log(`✅ Načteno z ${loadedPath}:`, Object.keys(ext));
+            break;
             } else {
-              WORLD_DATA[key] = ext[key];
+            console.warn(`❌ ${path} vrátil status ${res.status}`);
             }
-          });
-          console.log('✅ Načteno data.json');
+        } catch(e) {
+            console.warn(`⚠️ Chyba při fetch ${path}:`, e.message);
         }
-      } catch (e) { /* Ignorováno, používají se default data */ }
+        }
+        
+        if (ext && loadedPath) {
+        // Merge dat
+        Object.keys(ext).forEach(k => {
+            console.log(`🔗 Sloučím proměnnou: ${k}`);
+            WORLD_DATA[k] = { ...(WORLD_DATA[k]||{}), ...ext[k] };
+        });
+        
+        // ✅ DŮLEŽITÉ: Re-populate dropdowns PO načtení dat
+        populateVariableDropdown();
+        populateYearSelectors();
+        
+        console.log('🎯 WORLD_DATA keys:', Object.keys(WORLD_DATA));
+        console.log('🎯 Aktuální proměnné v dropdownu:', 
+            Array.from(document.getElementById('variableSelect').options).map(o => o.value));
+            
+        } else {
+        console.warn('⚠️ data.json se nepodařilo načíst z žádné cesty');
+        console.warn('💡 Zkontrolujte:');
+        console.warn('   1. Je soubor data.json ve stejné složce jako index.html?');
+        console.warn('   2. Má soubor platný JSON formát? (zkuste https://jsonlint.com)');
+        console.warn('   3. Otevřete konzoli (F12) → Network → reload → vidíte data.json?');
+        console.warn('   4. Zkuste otevřít přímo: ' + baseUrl + 'data.json');
+        }
+        
+    } catch(e) {
+        console.error('💥 Kritická chyba v loadExternalData:', e);
+    }
+    }
+
+function populateVariableDropdown() {
+  const sel = document.getElementById('variableSelect');
+  sel.innerHTML = '';
+  
+  // Labels pro default proměnné + fallback pro vlastní
+  const labels = {
+    population: 'Počet obyvatel',
+    gdp: 'HDP (mld. USD)', 
+    area: 'Rozloha (tis. km²)',
+    lifeExpectancy: 'Naděje dožití (roky)'
+  };
+  
+  Object.keys(WORLD_DATA).forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    
+    // Hezký název: buď z labels, nebo hezky naformátovaný klíč
+    opt.textContent = labels[k] || 
+      k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+    
+    if(k === currentVariable) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  
+  console.log('📋 Dropdown naplněn:', Array.from(sel.options).map(o => `${o.value}="${o.textContent}"`));
+}
+
+    function populateYearSelectors() {
+      const years = new Set();
+      Object.values(WORLD_DATA).forEach(v => {
+        Object.values(v).forEach(yr => {
+          if (typeof yr === 'object') Object.keys(yr).forEach(y => years.add(+y));
+        });
+      });
+      const sorted = Array.from(years).sort((a,b)=>a-b);
+      if(!sorted.length) sorted.push(2000,2023);
+      
+      const from = document.getElementById('yearFrom'), to = document.getElementById('yearTo');
+      from.innerHTML = to.innerHTML = '';
+      sorted.forEach(y => {
+        from.innerHTML += `<option value="${y}" ${y===2010?'selected':''}>${y}</option>`;
+        to.innerHTML += `<option value="${y}" ${y===2023?'selected':''}>${y}</option>`;
+      });
     }
 
     function updateStatus(text, type) {
       document.getElementById('statusText').textContent = text;
-      const dot = document.getElementById('statusDot');
-      dot.className = 'status-dot';
-      if (type === 'loading') dot.classList.add('loading');
-      if (type === 'error') dot.classList.add('error');
+      const d = document.getElementById('statusDot');
+      d.className = 'status-dot';
+      if(type==='loading') d.classList.add('loading');
+      if(type==='error') d.classList.add('error');
     }
     function showError(msg) {
-      const o = document.getElementById('loadingOverlay');
-      o.innerHTML = `<div class="error-message"><div style="font-size:48px;margin-bottom:12px;">⚠️</div><div style="margin-bottom:12px;">${msg}</div><button class="retry-btn" onclick="location.reload()">Zkusit znovu</button></div>`;
-      updateStatus('Chyba', 'error');
+      document.getElementById('loadingOverlay').innerHTML = `<div class="error-message"><div style="font-size:48px;margin-bottom:12px;">⚠️</div><div style="margin-bottom:12px;">${msg}</div><button class="retry-btn" onclick="location.reload()">Zkusit znovu</button></div>`;
+      updateStatus('Chyba','error');
     }
 
-    // ===== 3D GLOBUS (Canvas Texture) =====
+    // ===== 3D GLOBUS =====
     function initGlobe() {
-      const container = document.getElementById('globeCanvas');
-      const w = container.clientWidth || 800, h = container.clientHeight || 550;
-
+      const c = document.getElementById('globeCanvas');
+      const w = c.clientWidth||800, h = c.clientHeight||550;
+      
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 2000);
       camera.position.z = 300;
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(w, h); renderer.setPixelRatio(window.devicePixelRatio);
-      container.appendChild(renderer.domElement);
+      
+      renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+      renderer.setSize(w,h); renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000000, 0);
+      c.appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true; controls.dampingFactor = 0.05;
-      controls.minDistance = 150; controls.maxDistance = 600; controls.enablePan = false;
-      controls.addEventListener('start', () => { lastInteraction = Date.now(); });
+      controls.minDistance = 140; controls.maxDistance = 600; controls.enablePan = false;
+      controls.addEventListener('start', () => lastInteraction = Date.now());
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-      const dl = new THREE.DirectionalLight(0xffffff, 0.8); dl.position.set(5,3,5); scene.add(dl);
+      // 💡 Osvětlení jako v původní verzi
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(50, 30, 50);
+      scene.add(dirLight);
 
-      // Canvas textura
-      globeTextureCanvas = document.getElementById('globeTextureCanvas');
-      globeTextureCtx = globeTextureCanvas.getContext('2d');
+      // 🌍 Oceán (jasně oddělený)
+      const ocean = new THREE.Mesh(
+        new THREE.SphereGeometry(CONFIG.globeRadius, 64, 64),
+        new THREE.MeshStandardMaterial({color: 0x0a1628, roughness: 0.9, metalness: 0.1})
+      );
+      scene.add(ocean);
+
+      // 🎨 Textura zemí + hranic (vše na jednom canvasu = perfektní zarovnání)
+      globeTextureCanvas = document.createElement('canvas');
+      globeTextureCanvas.width = 4096; globeTextureCanvas.height = 2048;
+      ctx = globeTextureCanvas.getContext('2d');
       globeTexture = new THREE.CanvasTexture(globeTextureCanvas);
-      globeTexture.minFilter = THREE.LinearFilter; globeTexture.magFilter = THREE.LinearFilter;
+      globeTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      globeTexture.magFilter = THREE.LinearFilter;
+      globeTexture.generateMipmaps = true;
 
       globe = new THREE.Mesh(
-        new THREE.SphereGeometry(CONFIG.globeRadius, 64, 64),
-        new THREE.MeshStandardMaterial({ map: globeTexture, roughness: 0.8, metalness: 0.1 })
+        new THREE.SphereGeometry(CONFIG.globeRadius+0.1, 64, 64),
+        new THREE.MeshStandardMaterial({map: globeTexture, transparent: true, roughness: 0.7})
       );
       scene.add(globe);
+
+      // ⭐ Hvězdy jako v původní verzi
+      createStars();
 
       raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
       renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -327,141 +379,224 @@
       renderer.domElement.addEventListener('mouseleave', hideTooltip);
 
       window.addEventListener('resize', () => {
-        const w2 = container.clientWidth, h2 = container.clientHeight;
-        camera.aspect = w2/h2; camera.updateProjectionMatrix(); renderer.setSize(w2, h2);
+        const w2=c.clientWidth, h2=c.clientHeight;
+        camera.aspect=w2/h2; camera.updateProjectionMatrix(); renderer.setSize(w2,h2);
       });
     }
 
-    function updateGlobeTexture() {
-      const ctx = globeTextureCtx;
-      const W = globeTextureCanvas.width, H = globeTextureCanvas.height;
-      ctx.clearRect(0, 0, W, H);
+    function createStars() {
+      const geo = new THREE.BufferGeometry();
+      const positions = [];
+      for(let i=0; i<5000; i++) {
+        positions.push((Math.random()-0.5)*3000, (Math.random()-0.5)*3000, (Math.random()-0.5)*3000);
+      }
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+        color: 0xffffff, size: 0.8, transparent: true, opacity: 0.9, sizeAttenuation: true
+      })));
+    }
 
-      const proj = d3.geoEquirectangular().fitSize([W, H], geoData);
+    function updateGlobeTexture() {
+      if(!ctx || !geoData) return;
+      
+      ctx.clearRect(0,0,4096,2048);
+      
+      // Projekce pro texturu
+      const proj = d3.geoEquirectangular().fitSize([4096,2048], geoData);
       const path = d3.geoPath().projection(proj).context(ctx);
 
-      // Výplň zemí
+      // 1. Vyplnit země barvami
       geoData.features.forEach(f => {
-        ctx.beginPath();
-        ctx.fillStyle = getCountryColor(f.properties.code);
-        path(f);
-        ctx.fill();
+        const col = getCountryColor(f.properties.code);
+        ctx.beginPath(); ctx.fillStyle = col; path(f); ctx.fill();
       });
 
-      // Hranice
+      // 2. Nakreslit hranice (stejná projekce = perfektní zarovnání)
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
       ctx.lineWidth = 1.2;
-      geoData.features.forEach(f => path(f));
-      ctx.stroke();
+      geoData.features.forEach(f => {
+        ctx.beginPath();
+        path(f);
+        ctx.stroke();
+      });
 
-      // Popisky
-      if (showLabels) {
+      // 3. Popisky (pouze pro větší země, pomocí geoCentroid)
+      if(showLabels) {
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 6;
+        ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 6;
 
         geoData.features.forEach(f => {
           const code = f.properties.code;
-          const bounds = path.bounds(f);
-          const cx = (bounds[0][0] + bounds[1][0]) / 2;
-          const cy = (bounds[0][1] + bounds[1][1]) / 2;
+          const col = getCountryColor(code);
+          if(col === '#374151') return; // Skip countries without data
           
-          // Velikost fontu podle rozlohy
-          const w = bounds[1][0] - bounds[0][0];
-          const h = bounds[1][1] - bounds[0][1];
-          const fs = Math.max(10, Math.min(26, Math.sqrt(w*h) * 0.12));
-          ctx.font = `600 ${fs}px Inter, sans-serif`;
-
-          const val = getCountryValue(code, currentVariable);
-          if (val !== null) ctx.fillText(formatValue(val, currentVariable), cx, cy);
+          try {
+            const center = d3.geoCentroid(f.geometry);
+            const [x,y] = proj(center);
+            const bounds = path.bounds(f);
+            const area = (bounds[1][0]-bounds[0][0]) * (bounds[1][1]-bounds[0][1]);
+            
+            // Pouze pro země s dostatečnou plochou
+            if(area > 1500000) {
+              const fs = Math.max(16, Math.min(48, Math.sqrt(area)*0.008));
+              ctx.font = `700 ${fs}px Inter, sans-serif`;
+              ctx.fillText(formatValue(getCountryValue(code, currentVariable), currentVariable), x, y);
+            }
+          } catch(e) {}
         });
+        ctx.shadowBlur = 0;
       }
 
       globeTexture.needsUpdate = true;
     }
 
-    function onMouseMove(e) {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObject(globe);
-      
-      // Na základě raycastu najdeme nejbližší zemi (zjednodušeno: stačí kliknutí)
-      renderer.domElement.style.cursor = 'pointer';
-    }
-
-    function onMouseClick(e) {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObject(globe);
-      if (hits.length > 0) {
-        // Proklikání na globu: najdeme zemi podle směru pohledu
-        // Zjednodušení: ukážeme tooltip s aktuálním stavem
-        showTooltipHtml(e.clientX, e.clientY, { name: 'Klikněte na zemi v mapě pro detail', code: 'INFO' });
-      }
-    }
-
-    // ===== 2D MAPA =====
+    // ===== 2D MAPA (Mercator, nekonečná, správný poměr) =====
     function initMap() {
-      const container = document.getElementById('mapContainer');
-      container.innerHTML = '';
-      const w = container.clientWidth || 800, h = container.clientHeight || 550;
-
-      mapSvg = d3.select(container).append('svg').attr('viewBox', `0 0 ${w} ${h}`);
+      const c = document.getElementById('mapContainer');
+      c.innerHTML = '';
+      const w = c.clientWidth||800, h = c.clientHeight||550;
+      
+      mapSvg = d3.select(c).append('svg')
+        .attr('width', w).attr('height', h)
+        .attr('viewBox', `0 0 ${w} ${h}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+      
       mapG = mapSvg.append('g');
-      mapProjection = d3.geoMercator().fitSize([w-40, h-40], geoData).translate([w/2, h/2]);
+      
+      // ✅ Mercator projekce se správným poměrem stran
+      mapProjection = d3.geoMercator()
+        .scale(w / 6.2)
+        .translate([w/2, h/2 + h*0.05]);
+      
       mapPath = d3.geoPath().projection(mapProjection);
 
-      mapZoom = d3.zoom().scaleExtent([0.5, 12]).translateExtent([[-200,-200],[w+200,h+200]]).on('zoom', ev => mapG.attr('transform', ev.transform));
-      mapSvg.call(mapZoom);
+      // 🔄 Nekonečná mapa: 3 kopie světa (-360°, 0°, +360°)
+      const features = [];
+      geoData.features.forEach(f => {
+        // Originál
+        features.push({...f, properties: {...f.properties, _offset: 0}});
+        // Kopie +360°
+        const f1 = JSON.parse(JSON.stringify(f));
+        f1.properties = {...f.properties, _offset: 360};
+        f1.geometry = shiftGeometry(f1.geometry, 360);
+        features.push(f1);
+        // Kopie -360°
+        const f2 = JSON.parse(JSON.stringify(f));
+        f2.properties = {...f.properties, _offset: -360};
+        f2.geometry = shiftGeometry(f2.geometry, -360);
+        features.push(f2);
+      });
 
-      mapG.selectAll('path').data(geoData.features).enter().append('path')
-        .attr('d', mapPath).attr('class', 'country-path')
-        .attr('fill', '#64748b').attr('stroke', 'rgba(255,255,255,0.25)').attr('stroke-width', 0.8)
-        .on('mouseenter', function(e, d) { showTooltipHtml(e.pageX, e.pageY, d.properties); d3.select(this).raise(); })
-        .on('mousemove', function(e) { moveTooltip(e); })
-        .on('mouseleave', function() { hideTooltip(); })
-        .on('click', function(e, d) { showCountryDetail(e, d.properties); });
+      // Vykreslit země
+      mapCountries = {};
+      mapG.selectAll('path')
+        .data(features)
+        .enter()
+        .append('path')
+        .attr('d', mapPath)
+        .attr('class', 'country-path')
+        .attr('fill', d => getCountryColor(d.properties.code))
+        .attr('stroke', 'rgba(255,255,255,0.3)')
+        .attr('stroke-width', 0.8)
+        .style('cursor', 'pointer')
+        .on('mouseenter', function(e, d) {
+          showTooltipHtml(e, d.properties);
+          d3.select(this).raise().attr('stroke', '#fff').attr('stroke-width', 1.5);
+        })
+        .on('mousemove', e => moveTooltip(e))
+        .on('mouseleave', function() {
+          hideTooltip();
+          d3.select(this).attr('stroke', 'rgba(255,255,255,0.3)').attr('stroke-width', 0.8);
+        })
+        .on('click', function(e, d) {
+          e.stopPropagation();
+          showCountryDetail(e, d.properties);
+        });
+
+      // 🔄 Zoom + pan s nekonečným wrappingem
+      let currentTransform = d3.zoomIdentity;
+      
+      mapSvg.call(d3.zoom()
+        .scaleExtent([0.5, 8])
+        .translateExtent([[-w, -h], [w*2, h*2]])
+        .on('zoom', (event) => {
+          currentTransform = event.transform;
+          // Nekonečný posun: modulo šířka světa
+          const worldWidth = 4096 / currentTransform.k;
+          let x = currentTransform.x % worldWidth;
+          if(x < -worldWidth/2) x += worldWidth;
+          if(x > worldWidth/2) x -= worldWidth;
+          
+          mapG.attr('transform', `translate(${x}, ${currentTransform.y}) scale(${currentTransform.k})`);
+        })
+      );
+    }
+
+    function shiftGeometry(geom, dx) {
+      if(!geom) return geom;
+      const shift = coords => coords.map(r => r.map(p => [p[0]+dx, p[1]]));
+      if(geom.type === 'Polygon') {
+        return {...geom, coordinates: geom.coordinates.map(shift)};
+      } else if(geom.type === 'MultiPolygon') {
+        return {...geom, coordinates: geom.coordinates.map(poly => poly.map(shift))};
+      }
+      return geom;
     }
 
     // ===== VIZUALIZACE & DATA =====
     function getCountryValue(code, variable, year) {
       const v = WORLD_DATA[variable]?.[code];
-      if (v === undefined || v === null) return null;
-      if (typeof v === 'object') return year ? (v[year] ?? null) : v[Object.keys(v).slice(-1)[0]];
+      if(v===undefined||v===null) return null;
+      if(typeof v === 'object') return year ? (v[year]??null) : v[Object.keys(v).slice(-1)[0]];
       return v;
     }
 
     function getCountryColor(code) {
-      if (!isCompareMode) {
-        const value = getCountryValue(code, currentVariable);
-        if (value === null) return '#374151';
-        let vals = []; geoData.features.forEach(f => { const v = getCountryValue(f.properties.code, currentVariable); if(v!==null) vals.push(v); });
-        if (!vals.length) return '#374151';
+      if(!isCompareMode) {
+        const val = getCountryValue(code, currentVariable);
+        if(val===null) return '#374151';
+        
+        let vals = [];
+        geoData.features.forEach(f => {
+          const v = getCountryValue(f.properties.code, currentVariable);
+          if(v!==null) vals.push(v);
+        });
+        if(!vals.length) return '#374151';
+        
         const min = Math.min(...vals), max = Math.max(...vals);
         document.getElementById('colorMin').textContent = formatValue(min, currentVariable);
         document.getElementById('colorMax').textContent = formatValue(max, currentVariable);
-        const colors = CONFIG.colors[currentColorScale];
-        const t = Math.pow((value-min)/(max-min), 0.6);
-        const i = Math.min(Math.floor(t*(colors.length-1)), colors.length-2);
-        return d3.interpolateRgb(colors[i], colors[i+1])(t*(colors.length-1)-i);
+        
+        const cols = CONFIG.colors[currentColorScale];
+        const t = Math.pow((val-min)/(max-min), 0.6);
+        const i = Math.min(Math.floor(t*(cols.length-1)), cols.length-2);
+        return d3.interpolateRgb(cols[i], cols[i+1])(t*(cols.length-1)-i);
       } else {
-        const y1 = document.getElementById('yearFrom').value, y2 = document.getElementById('yearTo').value;
-        const v1 = getCountryValue(code, currentVariable, y1), v2 = getCountryValue(code, currentVariable, y2);
-        if (v1===null || v2===null) return '#374151';
-        const delta = v2-v1;
-        let maxD=0; geoData.features.forEach(f=>{const d1=getCountryValue(f.properties.code,currentVariable,y1),d2=getCountryValue(f.properties.code,currentVariable,y2);if(d1!==null&&d2!==null)maxD=Math.max(maxD,Math.abs(d2-d1))});
+        const y1 = document.getElementById('yearFrom').value;
+        const y2 = document.getElementById('yearTo').value;
+        const v1 = getCountryValue(code, currentVariable, y1);
+        const v2 = getCountryValue(code, currentVariable, y2);
+        
+        if(v1===null||v2===null) return '#374151';
+        const delta = v2 - v1;
+        
+        let maxD = 0;
+        geoData.features.forEach(f => {
+          const d1 = getCountryValue(f.properties.code, currentVariable, y1);
+          const d2 = getCountryValue(f.properties.code, currentVariable, y2);
+          if(d1!==null && d2!==null) maxD = Math.max(maxD, Math.abs(d2-d1));
+        });
+        
         document.getElementById('colorMin').textContent = `−${formatValue(maxD,'delta')}`;
         document.getElementById('colorMax').textContent = `+${formatValue(maxD,'delta')}`;
-        if (maxD===0) return CONFIG.deltaColors.neutral;
+        
+        if(maxD===0) return CONFIG.deltaColors.neutral;
         const t = delta/maxD;
-        const cols = t<0 ? ['#fee2e2','#fca5a5','#f87171','#ef4444'] : ['#dcfce7','#86efac','#22c55e','#15803d'];
-        const i = Math.min(Math.floor(Math.abs(t)*(cols.length-1)), cols.length-2);
-        return d3.interpolateRgb(cols[i], cols[i+1])(Math.abs(t)*(cols.length-1)-i);
+        const c = t<0 ? ['#fee2e2','#fca5a5','#f87171','#ef4444'] : ['#dcfce7','#86efac','#22c55e','#15803d'];
+        const i = Math.min(Math.floor(Math.abs(t)*(c.length-1)), c.length-2);
+        return d3.interpolateRgb(c[i], c[i+1])(Math.abs(t)*(c.length-1)-i);
       }
     }
 
@@ -469,19 +604,23 @@
       currentVariable = document.getElementById('variableSelect').value;
       currentColorScale = document.getElementById('colorScale').value;
       showLabels = document.getElementById('showLabels').checked;
-      const colors = CONFIG.colors[currentColorScale];
-      document.getElementById('colorBar').style.background = `linear-gradient(to right, ${colors.join(', ')})`;
-
-      // Globus
+      
+      document.getElementById('colorBar').style.background = `linear-gradient(to right, ${CONFIG.colors[currentColorScale].join(', ')})`;
+      
       updateGlobeTexture();
-      // Mapa
-      mapG.selectAll('path').transition().duration(300).attr('fill', d => getCountryColor(d.properties.code));
+      
+      // Update 2D map colors
+      if(mapG) {
+        mapG.selectAll('path').transition().duration(300)
+          .attr('fill', d => getCountryColor(d.properties.code));
+      }
+      
       updateLegend();
     }
 
     function updateLegend() {
       const l = document.getElementById('legend');
-      if (isCompareMode) {
+      if(isCompareMode) {
         l.innerHTML = `<span class="legend-dot" style="background:#ef4444"></span> Pokles <span class="legend-dot" style="background:#64748b"></span> Beze změny <span class="legend-dot" style="background:#22c55e"></span> Nárůst`;
       } else {
         const c = CONFIG.colors[currentColorScale];
@@ -490,67 +629,113 @@
     }
 
     function formatValue(val, type) {
-      const v = type || currentVariable;
-      if (v==='delta') { const a=Math.abs(val), s=val<0?'−':'+'; return s+(currentVariable==='population'?a.toFixed(1)+'M':currentVariable==='gdp'?a.toFixed(0)+'B':currentVariable==='lifeExpectancy'?a.toFixed(1)+' let':a.toLocaleString('cs-CZ')); }
-      if (v==='population') return val.toFixed(1)+' mil.';
-      if (v==='gdp') return val.toLocaleString('cs-CZ')+' mld.';
-      if (v==='area') return val.toFixed(0)+' tis. km²';
-      if (v==='lifeExpectancy') return val.toFixed(1)+' let';
+      const v = type||currentVariable;
+      if(v==='delta') {
+        const a = Math.abs(val), s = val<0?'−':'+';
+        if(currentVariable==='population') return s+a.toFixed(1)+'M';
+        if(currentVariable==='gdp') return s+a.toFixed(0)+'B';
+        if(currentVariable==='lifeExpectancy') return s+a.toFixed(1)+' let';
+        return s+a.toLocaleString('cs-CZ');
+      }
+      if(v==='population') return val.toFixed(1)+' mil.';
+      if(v==='gdp') return val.toLocaleString('cs-CZ')+' mld.';
+      if(v==='area') return val.toFixed(0)+' tis. km²';
+      if(v==='lifeExpectancy') return val.toFixed(1)+' let';
       return val.toLocaleString('cs-CZ');
     }
 
-    function getVariableLabel(k) { return {population:'👥 Obyvatelstvo',gdp:'💰 HDP',area:'📐 Rozloha',lifeExpectancy:'❤️ Dožití'}[k]||k; }
-
-    // ===== TOOLTIP & DETAIL =====
-    function showTooltipHtml(x, y, props) {
-      const tt = document.getElementById('tooltip'), c = document.getElementById('tooltipContent');
+    // ===== TOOLTIP =====
+    function showTooltipHtml(e, props) {
+      const tt = document.getElementById('tooltip');
       const code = props.code;
       const val = getCountryValue(code, currentVariable);
-      const display = val!==null ? formatValue(val, currentVariable) : '—';
-      c.innerHTML = `<h4 style="margin:0 0 6px 0;font-size:1.1rem;">${props.name}</h4><p style="margin:0;color:var(--text-secondary);font-size:0.9rem;">${getVariableLabel(currentVariable)}: <strong style="color:var(--text-primary)">${display}</strong></p><p style="margin:6px 0 0 0;font-size:0.75rem;color:var(--text-muted);">Klikněte pro detaily všech let</p>`;
-      tt.classList.remove('hidden'); tt.classList.add('visible');
-      moveTooltip({clientX:x, clientY:y});
+      
+      tt.innerHTML = `
+        <h4>${props.name}</h4>
+        <p>${getVariableLabel(currentVariable)}: <strong>${val!==null?formatValue(val,currentVariable):'—'}</strong></p>
+        <p style="margin-top:4px;font-size:0.75rem;color:var(--text-muted)">Klikněte pro detaily všech let</p>
+      `;
+      tt.classList.add('visible');
+      moveTooltip(e);
     }
 
     function showCountryDetail(e, props) {
-      const tt = document.getElementById('tooltip'), c = document.getElementById('tooltipContent');
-      let html = `<h4 style="margin:0 0 8px 0;">${props.name}</h4><table>`;
+      const tt = document.getElementById('tooltip');
+      const code = props.code;
+      
+      let html = `<h4>${props.name}</h4><table>`;
       
       Object.entries(WORLD_DATA).forEach(([k, data]) => {
-        const v = data[props.code];
+        const v = data[code];
         html += `<tr><th colspan="2" style="padding-top:6px;color:#a78bfa;font-size:0.8rem;">${getVariableLabel(k)}</th></tr>`;
-        if (typeof v === 'object') {
+        
+        if(typeof v === 'object') {
+          Object.entries(v).forEach(([y, val]) => {
+            html += `<tr><td>${y}</td><td style="color:var(--text-primary)">${formatValue(val,k)}</td></tr>`;
+          });
+          // Delta
           const entries = Object.entries(v);
-          entries.forEach(([y,val]) => html += `<tr><td>${y}</td><td style="color:var(--text-primary)">${formatValue(val,k)}</td></tr>`);
-          if (entries.length>=2) {
+          if(entries.length >= 2) {
             const d = entries[entries.length-1][1] - entries[0][1];
             const cls = d>=0?'delta-pos':'delta-neg';
             html += `<tr><td style="font-size:0.75rem;color:var(--text-muted)">Δ</td><td class="${cls}">${d>=0?'+':''}${formatValue(d,'delta')}</td></tr>`;
           }
-        } else if (v!==undefined) {
+        } else if(v !== undefined) {
           html += `<tr><td colspan="2" style="color:var(--text-primary)">${formatValue(v,k)}</td></tr>`;
         } else {
           html += `<tr><td colspan="2" style="color:var(--text-muted)">Není k dispozici</td></tr>`;
         }
       });
+      
       html += '</table>';
-      c.innerHTML = html;
-      tt.classList.remove('hidden'); tt.classList.add('visible');
+      tt.innerHTML = html;
+      tt.classList.add('visible');
       moveTooltip(e);
     }
 
     function moveTooltip(e) {
       const tt = document.getElementById('tooltip');
-      const w = window.innerWidth, h = window.innerHeight;
+      const rect = tt.getBoundingClientRect();
       let x = e.clientX + 15, y = e.clientY + 15;
-      if (x + 280 > w) x = e.clientX - 295;
-      if (y + 300 > h) y = e.clientY - 310;
-      tt.style.left = x + 'px'; tt.style.top = y + 'px';
+      
+      // Keep tooltip on screen
+      if(x + rect.width + 20 > window.innerWidth) x = e.clientX - rect.width - 15;
+      if(y + rect.height + 20 > window.innerHeight) y = e.clientY - rect.height - 15;
+      
+      tt.style.left = x + 'px';
+      tt.style.top = y + 'px';
     }
-
+    
     function hideTooltip() {
-      document.getElementById('tooltip').classList.add('hidden');
       document.getElementById('tooltip').classList.remove('visible');
+    }
+    
+    function onMouseMove(e) {
+      const container = document.getElementById('globeCanvas');
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(globe);
+      
+      if(intersects.length > 0) {
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        renderer.domElement.style.cursor = 'grab';
+      }
+    }
+    
+    function onMouseClick(e) {
+      // Proklik na globu - ukázat tooltip s aktuální hodnotou
+      const container = document.getElementById('globeCanvas');
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      // Pro zjednodušení: kliknutí na globu ukáže obecný tooltip
+      // Pro detailní info použijte 2D mapu
     }
 
     // ===== OVLÁDÁNÍ =====
@@ -559,24 +744,42 @@
       document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view===v));
       document.getElementById('globeCanvas').style.display = v==='globe'?'block':'none';
       document.getElementById('mapContainer').style.display = v==='map'?'block':'none';
-      if (v==='globe' && autoRotate) lastInteraction = Date.now();
+      if(v==='globe' && autoRotate) lastInteraction = Date.now();
     }
-
-    function toggleAutoRotate() { autoRotate = document.getElementById('autoRotate').checked; if(autoRotate && currentView==='globe') lastInteraction=Date.now(); }
+    
+    function toggleAutoRotate() {
+      autoRotate = document.getElementById('autoRotate').checked;
+      if(autoRotate && currentView==='globe') lastInteraction = Date.now();
+    }
+    
     function toggleCompareMode() {
       isCompareMode = document.getElementById('compareMode').checked;
       document.getElementById('yearSelectors').style.display = isCompareMode?'flex':'none';
       updateVisualization();
     }
+    
+    function getVariableLabel(k) {
+      return {population:'👥 Obyvatelstvo',gdp:'💰 HDP',area:'📐 Rozloha',lifeExpectancy:'❤️ Dožití'}[k]||k;
+    }
 
     // ===== ANIMACE =====
     function animate() {
       animationId = requestAnimationFrame(animate);
-      if (currentView==='globe' && autoRotate && Date.now()-lastInteraction>CONFIG.autoRotatePauseTime) globe.rotation.y += CONFIG.rotationSpeed;
-      if (currentView==='globe') { controls.update(); renderer.render(scene,camera); }
+      
+      if(currentView==='globe' && autoRotate && Date.now()-lastInteraction>CONFIG.autoRotatePauseTime) {
+        globe.rotation.y += CONFIG.rotationSpeed;
+      }
+      
+      if(currentView==='globe') {
+        controls.update();
+        renderer.render(scene, camera);
+      }
     }
-
-    window.addEventListener('beforeunload', () => { if(animationId) cancelAnimationFrame(animationId); if(renderer) renderer.dispose(); });
+    
+    window.addEventListener('beforeunload', () => {
+      if(animationId) cancelAnimationFrame(animationId);
+      if(renderer) renderer.dispose();
+    });
   </script>
 </body>
 </html>
