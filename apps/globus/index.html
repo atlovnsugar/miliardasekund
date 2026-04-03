@@ -910,18 +910,35 @@ function shiftGeometry(geom, dx) {
   moveTooltip(e);
 }
 
-    function moveTooltip(e) {
-      const tt = document.getElementById('tooltip');
-      const rect = tt.getBoundingClientRect();
-      let x = e.clientX + 15, y = e.clientY + 15;
-      
-      // Keep tooltip on screen
-      if(x + rect.width + 20 > window.innerWidth) x = e.clientX - rect.width - 15;
-      if(y + rect.height + 20 > window.innerHeight) y = e.clientY - rect.height - 15;
-      
-      tt.style.left = x + 'px';
-      tt.style.top = y + 'px';
+function moveTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  
+  // ✅ Počkejte, až se tooltip vykreslí, abychom znali jeho rozměry
+  requestAnimationFrame(() => {
+    const rect = tt.getBoundingClientRect();
+    const padding = 12; // Odsazení od kurzoru + okraj obrazovky
+    
+    let x = e.clientX + padding;
+    let y = e.clientY + padding;
+    
+    // ✅ Pokud tooltip vyčnívá vpravo, posuňte ho vlevo od kurzoru
+    if (x + rect.width + padding > window.innerWidth) {
+      x = e.clientX - rect.width - padding;
     }
+    
+    // ✅ Pokud tooltip vyčnívá dole, posuňte ho nahoru od kurzoru
+    if (y + rect.height + padding > window.innerHeight) {
+      y = e.clientY - rect.height - padding;
+    }
+    
+    // ✅ Zajistěte, že tooltip není úplně mimo obrazovku
+    x = Math.max(padding, Math.min(x, window.innerWidth - rect.width - padding));
+    y = Math.max(padding, Math.min(y, window.innerHeight - rect.height - padding));
+    
+    tt.style.left = x + 'px';
+    tt.style.top = y + 'px';
+  });
+}
     
     function hideTooltip() {
       document.getElementById('tooltip').classList.remove('visible');
