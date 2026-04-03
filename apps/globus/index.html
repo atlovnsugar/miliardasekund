@@ -794,19 +794,22 @@ function shiftGeometry(geom, dx) {
     }
 
     // ===== TOOLTIP =====
-    function showTooltipHtml(e, props) {
-      const tt = document.getElementById('tooltip');
-      const code = props.code;
-      const val = getCountryValue(code, currentVariable);
-      
-      tt.innerHTML = `
-        <h4>${props.name}</h4>
-        <p>${getVariableLabel(currentVariable)}: <strong>${val!==null?formatValue(val,currentVariable):'—'}</strong></p>
-        <p style="margin-top:4px;font-size:0.75rem;color:var(--text-muted)">Klikněte pro detaily všech let</p>
-      `;
-      tt.classList.add('visible');
-      moveTooltip(e);
-    }
+function showTooltipHtml(e, props) {
+  const tt = document.getElementById('tooltip');
+  const code = props.code;
+  const val = getCountryValue(code, currentVariable);
+  
+  tt.innerHTML = `
+    <h4>${props.name}</h4>
+    <p>${getVariableLabel(currentVariable)}: <strong>${val!==null?formatValue(val,currentVariable):'—'}</strong></p>
+    <p style="margin-top:4px;font-size:0.75rem;color:var(--text-muted)">Klikněte pro detaily všech let</p>
+  `;
+  
+  // ✅ Bez requestAnimationFrame
+  tt.classList.remove('hidden');
+  tt.classList.add('visible');
+  moveTooltip(e);
+}
 
     function showCountryDetail(e, props) {
   const tt = document.getElementById('tooltip');
@@ -905,39 +908,44 @@ function shiftGeometry(geom, dx) {
     ${isCompareMode ? '🔍 Porovnání: vybrané 2 roky + změna' : '📅 Zobrazeno 5 let (aktuální ±2)'}
   </p>`;
   
+// Na konci funkce showCountryDetail(), PO nastavení innerHTML:
   tt.innerHTML = html;
+  
+  // ✅ Okamžitě zobraz a pozicuj (bez requestAnimationFrame)
+  tt.classList.remove('hidden');
   tt.classList.add('visible');
-  moveTooltip(e);
+  moveTooltip(e); // ← Přímé volání s aktuální událostí
 }
 
 function moveTooltip(e) {
   const tt = document.getElementById('tooltip');
+  if (!tt.classList.contains('visible')) return;
   
-  // ✅ Počkejte, až se tooltip vykreslí, abychom znali jeho rozměry
-  requestAnimationFrame(() => {
-    const rect = tt.getBoundingClientRect();
-    const padding = 12; // Odsazení od kurzoru + okraj obrazovky
-    
-    let x = e.clientX + padding;
-    let y = e.clientY + padding;
-    
-    // ✅ Pokud tooltip vyčnívá vpravo, posuňte ho vlevo od kurzoru
-    if (x + rect.width + padding > window.innerWidth) {
-      x = e.clientX - rect.width - padding;
-    }
-    
-    // ✅ Pokud tooltip vyčnívá dole, posuňte ho nahoru od kurzoru
-    if (y + rect.height + padding > window.innerHeight) {
-      y = e.clientY - rect.height - padding;
-    }
-    
-    // ✅ Zajistěte, že tooltip není úplně mimo obrazovku
-    x = Math.max(padding, Math.min(x, window.innerWidth - rect.width - padding));
-    y = Math.max(padding, Math.min(y, window.innerHeight - rect.height - padding));
-    
-    tt.style.left = x + 'px';
-    tt.style.top = y + 'px';
-  });
+  // ✅ Získejte rozměry tooltipu
+  const rect = tt.getBoundingClientRect();
+  const padding = 16; // Odsazení od kurzoru a okraje
+  
+  // ✅ Použijte aktuální souřadnice z události
+  let x = e.clientX + padding;
+  let y = e.clientY + padding;
+  
+  // ✅ Pokud tooltip vyčnívá vpravo, posuňte ho vlevo
+  if (x + rect.width + padding > window.innerWidth) {
+    x = e.clientX - rect.width - padding;
+  }
+  
+  // ✅ Pokud tooltip vyčnívá dole, posuňte ho nahoru
+  if (y + rect.height + padding > window.innerHeight) {
+    y = e.clientY - rect.height - padding;
+  }
+  
+  // ✅ Zajistěte, že tooltip je vždy na obrazovce
+  x = Math.max(padding, Math.min(x, window.innerWidth - rect.width - padding));
+  y = Math.max(padding, Math.min(y, window.innerHeight - rect.height - padding));
+  
+  // ✅ Aplikujte pozici (tooltip je position: fixed)
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
 }
     
     function hideTooltip() {
@@ -1014,20 +1022,7 @@ function moveTooltip(e) {
       if(animationId) cancelAnimationFrame(animationId);
       if(renderer) renderer.dispose();
     });
-
-    // 🧪 Debug: Sledujte události na mapě
-document.addEventListener('DOMContentLoaded', () => {
-  const mapContainer = document.getElementById('mapContainer');
-  
-  mapContainer.addEventListener('click', (e) => {
-    if(e.target.classList.contains('country-path')) {
-      console.log('✅ Click na zemi:', e.target.__data__?.properties?.name);
-    }
-  });
-  
-  mapContainer.addEventListener('mousedown', () => console.log('🖱️ mousedown'));
-  mapContainer.addEventListener('mouseup', () => console.log('🖱️ mouseup'));
-});
+    
   </script>
 </body>
 </html>

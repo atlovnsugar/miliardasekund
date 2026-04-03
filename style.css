@@ -200,41 +200,7 @@ footer a:hover { text-decoration: underline; }
   display: block;
 }
 
-/* Tooltip */
-.tooltip {
-  position: absolute;
-  background: rgba(17, 24, 39, 0.96);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: var(--radius-xs);
-  padding: 16px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  pointer-events: none;
-  z-index: 1000;
-  max-width: 280px;
-  box-shadow: var(--shadow-lg);
-  display: none;
-  backdrop-filter: blur(12px);
-}
 
-.tooltip.visible { display: block; }
-.tooltip h4 {
-  margin: 0 0 8px 0;
-  font-size: 1.05rem;
-  color: var(--accent-3);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: 6px;
-}
-.tooltip p { margin: 3px 0; color: var(--text-secondary); font-size: 0.85rem; }
-.tooltip .value { font-weight: 700; color: var(--text-primary); }
-.tooltip .delta-positive { color: #34d399; font-weight: 600; }
-.tooltip .delta-negative { color: #f87171; font-weight: 600; }
-.tooltip .click-hint {
-  margin-top: 8px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-style: italic;
-}
 
 /* Ovládací panely */
 .controls-panel {
@@ -528,74 +494,6 @@ select option:hover, select option:checked, select option:focus {
   color: white !important;
 }
 
-/* Tooltip - oprava pozicování */
-.tooltip {
-  position: absolute;
-  z-index: 1000;
-  pointer-events: auto;
-  transition: opacity 0.2s ease;
-}
-
-.tooltip.visible { opacity: 1; }
-.tooltip.hidden { opacity: 0; pointer-events: none; }
-
-/* Canvas wrapper - zajištění správného překrývání */
-.canvas-wrapper {
-  position: relative;
-  overflow: hidden;
-}
-.canvas-wrapper > div, .canvas-wrapper > canvas, .canvas-wrapper > svg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-}
-#globeCanvas { display: block; }
-#mapContainer { display: none; }
-#mapContainer svg { display: block; }
-
-/* Tooltip tabulka - lepší formátování */
-.tooltip table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 4px;
-  font-size: 0.8rem;
-}
-.tooltip th {
-  text-align: left;
-  color: #94a3b8;
-  padding: 2px 0 6px 0;
-  font-weight: 600;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-.tooltip td {
-  padding: 2px 0;
-}
-.tooltip td:first-child {
-  color: #94a3b8;
-  padding-right: 8px;
-}
-.tooltip td:last-child {
-  text-align: right;
-  color: #f1f5f9;
-  font-weight: 500;
-}
-.tooltip .delta-pos { color: #34d399 !important; font-weight: 600; }
-.tooltip .delta-neg { color: #f87171 !important; font-weight: 600; }
-.tooltip p {
-  margin: 8px 0 0 0;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 6px;
-}
-
-/* ✅ Zajištění, že tooltip je vždy nahoře */
-.tooltip {
-  z-index: 9999 !important;
-  pointer-events: auto !important;
-}
-
 /* ✅ Country paths musí přijímat pointer events */
 .country-path {
   pointer-events: all !important;
@@ -621,11 +519,7 @@ select option:hover, select option:checked, select option:focus {
   pointer-events: all;
 }
 
-/* ✅ Tooltip vždy nahoře */
-.tooltip {
-  z-index: 9999 !important;
-  pointer-events: auto !important;
-}
+
 
 /* ✅ Country paths přijímají události */
 .country-path {
@@ -651,3 +545,120 @@ select option:hover, select option:checked, select option:focus {
 #mapContainer svg > g {
   pointer-events: all;
 }
+
+/* ===== TOOLTIP FIXES - přepíše konfliktní styly ===== */
+
+
+/* Canvas wrapper - správné vrstvení */
+.canvas-wrapper {
+  position: relative !important;
+  overflow: visible !important; /* ✅ Tooltip může "vyčnívat" */
+}
+
+/* Country paths */
+.country-path {
+  pointer-events: all !important;
+  cursor: pointer !important;
+  transition: stroke 0.15s, stroke-width 0.15s !important;
+}
+
+
+/* ===== TOOLTIP - ČISTÁ VERZE ===== */
+.tooltip {
+  position: fixed !important; /* ✅ Viewport-relative, ne canvas-relative */
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 10000 !important;
+  pointer-events: none !important; /* ✅ Tooltip neblokuje kliky */
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: #e2e8f0;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  max-width: 280px;
+  max-height: 70vh;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tooltip.visible {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important; /* ✅ Interaktivní obsah */
+}
+
+.tooltip.hidden {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+.tooltip h4 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #a78bfa;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 6px;
+}
+
+.tooltip table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.tooltip th {
+  text-align: left;
+  color: #94a3b8;
+  padding: 4px 0;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.tooltip td {
+  padding: 3px 0;
+  color: #f1f5f9;
+}
+
+.tooltip td:first-child {
+  color: #94a3b8;
+  padding-right: 12px;
+  text-align: left;
+}
+
+.tooltip td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+.tooltip .delta-pos { color: #34d399 !important; font-weight: 600; }
+.tooltip .delta-neg { color: #f87171 !important; font-weight: 600; }
+
+.tooltip > p:last-of-type {
+  margin: 10px 0 0 0;
+  font-size: 0.7rem;
+  color: #64748b;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 8px;
+}
+
+/* Canvas wrapper - tooltip může vyčnívat, ale neblokuje interakce */
+.canvas-wrapper {
+  position: relative;
+  overflow: visible;
+  pointer-events: none;
+}
+.canvas-wrapper > #globeCanvas,
+.canvas-wrapper > #mapContainer {
+  pointer-events: auto;
+}
+/* Tooltip je fixed, nepotřebuje pointer-events od parent */
