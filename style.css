@@ -620,3 +620,34 @@ select option:hover, select option:checked, select option:focus {
 #mapContainer svg > g {
   pointer-events: all;
 }
+
+/* ✅ Tooltip vždy nahoře */
+.tooltip {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* ✅ Country paths přijímají události */
+.country-path {
+  pointer-events: all !important;
+  cursor: pointer;
+  transition: stroke 0.15s, stroke-width 0.15s;
+}
+
+/* ✅ Canvas wrapper: none na kontejneru, auto na child prvcích */
+.canvas-wrapper {
+  pointer-events: none;
+}
+.canvas-wrapper > #globeCanvas,
+.canvas-wrapper > #mapContainer,
+.canvas-wrapper > .tooltip {
+  pointer-events: auto;
+}
+
+/* ✅ SVG: none na svg, all na g (kde jsou pathy) */
+#mapContainer svg {
+  pointer-events: none;
+}
+#mapContainer svg > g {
+  pointer-events: all;
+}
