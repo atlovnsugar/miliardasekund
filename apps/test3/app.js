@@ -33,50 +33,56 @@ async loadTermStats(term) {
     if (!res.ok) throw new Error('Data pro toto období nebyla nalezena.');
     const rawData = await res.json();
     
-    // Filtr politiků: zobrazit jen ty, kteří působili ve vybraném období
-    const filteredPoliticians = {};
-    for (const [id, p] of Object.entries(rawData.politicians)) {
-      const regEntry = State.registry?.[id];
+    // Bezpečný filtr: zkusíme najít politiky pro dané období
+    let filteredPoliticians = rawData.politicians;
+    let filteredParties = rawData.parties;
+    
+    // Varianta 1: Politik má přímo vlastnost 'term' (nejčastější)
+    const hasTermField = Object.values(rawData.politicians).some(p => p.term !== undefined);
+    if (hasTermField) {
+      const termNum = parseInt(term);
+      filteredPoliticians = Object.fromEntries(
+        Object.entries(rawData.politicians).filter(([id, p]) => p.term === termNum)
+      );
       
-      // Podpora různých formátů registry:
-      if (regEntry) {
-        // Varianta A: pole 'terms' s čísly období
-        if (Array.isArray(regEntry.terms) && regEntry.terms.includes(parseInt(term))) {
-          filteredPoliticians[id] = p;
-        }
-        // Varianta B: jediný 'term'
-        else if (regEntry.term == term) {
-          filteredPoliticians[id] = p;
-        }
-        // Varianta C: politik má přímo v datech 'term'
-        else if (p.term == term) {
+      // Filtr stran podle aktivních politiků
+      const activeNames = new Set(Object.values(filteredPoliticians).map(p => p.party));
+      filteredParties = Object.fromEntries(
+        Object.entries(rawData.parties).filter(([key, party]) => activeNames.has(party.name))
+      );
+    }
+    // Varianta 2: Registry má pole 'terms'
+    else if (State.registry) {
+      const termNum = parseInt(term);
+      filteredPoliticians = {};
+      for (const [id, p] of Object.entries(rawData.politicians)) {
+        const reg = State.registry[id];
+        if (reg && Array.isArray(reg.terms) && reg.terms.includes(termNum)) {
           filteredPoliticians[id] = p;
         }
       }
-      // Fallback: pokud registry chybí, spoléháme na strukturu dat
-      else if (p.term == term || !p.term) {
-        filteredPoliticians[id] = p;
+      if (Object.keys(filteredPoliticians).length > 0) {
+        const activeNames = new Set(Object.values(filteredPoliticians).map(p => p.party));
+        filteredParties = Object.fromEntries(
+          Object.entries(rawData.parties).filter(([key, party]) => activeNames.has(party.name))
+        );
       }
     }
+    // Fallback: pokud nic nepasuje, použijeme rawData tak, jak jsou
+    // (lepší zobrazit všechno než nic)
     
-    // Filtr stran: zobrazit jen ty, které mají alespoň jednoho aktivního politika
-    const activePartyNames = new Set(Object.values(filteredPoliticians).map(p => p.party));
-    const filteredParties = {};
-    for (const [key, party] of Object.entries(rawData.parties)) {
-      if (activePartyNames.has(party.name)) {
-        filteredParties[key] = party;
-      }
-    }
-    
-    // Aktualizace state s vyfiltrovanými daty
     State.stats = {
       ...rawData,
       politicians: filteredPoliticians,
       parties: filteredParties
     };
     State.currentTerm = parseInt(term);
+    
+    console.log(`✅ Načteno období ${term}: ${Object.keys(filteredPoliticians).length} politiků, ${Object.keys(filteredParties).length} stran`);
     return true;
+    
   } catch (err) {
+    console.error('❌ Chyba při načítání:', err);
     alert(err.message);
     return false;
   } finally {
@@ -118,11 +124,14 @@ renderPartyDashboard() {
     const card = document.createElement('div');
     card.className = 'stat-card party-card';
     // Bezpečné ID: odstranění diakritiky a speciálních znaků
-    const safeId = party.name
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // odstraní diakritiku
-      .replace(/\s+/g, '-')
-      .replace(/[^a-zA-Z0-9-]/g, '')
-      .toLowerCase();
+// Uvnitř renderPartyDashboard(), při tvorbě safeId:
+const safeId = party.name
+  .toString()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // odstraní diakritiku
+  .replace(/\s+/g, '-')                              // mezery na pomlčky
+  .replace(/[^a-zA-Z0-9-]/g, '')                     // odstraní vše ostatní
+  .replace(/^-+|-+$/g, '')                           // odstraní pomlčky na začátku/konci
+  .toLowerCase() || `party-${Math.random().toString(36).substr(2, 9)}`; // fallback ID
     
     card.innerHTML = `
       <div class="party-header">
@@ -318,11 +327,12 @@ renderPoliticiansList() {
 
 const UI = {
   async init() {
-    await DataService.fetchRegistry();
+    await DataService.fetchRegistry(); // Počkáme na registry
     this.bindEvents();
-    // Defaultně zkusíme načíst 9. období
+    
     const termSelect = document.getElementById('termSelect');
-    if (termSelect.value) {
+    // Pokud je už něco vybrané (např. z localStorage), načti to
+    if (termSelect && termSelect.value) {
         const success = await DataService.loadTermStats(termSelect.value);
         if (success) this.refreshAll();
     }
