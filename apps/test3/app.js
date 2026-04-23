@@ -26,21 +26,63 @@ const DataService = {
     State.registry = data.pol;
   },
 
-  async loadTermStats(term) {
-    try {
-      this.toggleLoader(true);
-      const res = await fetch(`${Config.DATA_BASE}/stats_${term}.json`);
-      if (!res.ok) throw new Error('Data pro toto období nebyla nalezena.');
-      State.stats = await res.json();
-      State.currentTerm = term;
-      return true;
-    } catch (err) {
-      alert(err.message);
-      return false;
-    } finally {
-      this.toggleLoader(false);
+async loadTermStats(term) {
+  try {
+    this.toggleLoader(true);
+    const res = await fetch(`${Config.DATA_BASE}/stats_${term}.json`);
+    if (!res.ok) throw new Error('Data pro toto období nebyla nalezena.');
+    const rawData = await res.json();
+    
+    // Filtr politiků: zobrazit jen ty, kteří působili ve vybraném období
+    const filteredPoliticians = {};
+    for (const [id, p] of Object.entries(rawData.politicians)) {
+      const regEntry = State.registry?.[id];
+      
+      // Podpora různých formátů registry:
+      if (regEntry) {
+        // Varianta A: pole 'terms' s čísly období
+        if (Array.isArray(regEntry.terms) && regEntry.terms.includes(parseInt(term))) {
+          filteredPoliticians[id] = p;
+        }
+        // Varianta B: jediný 'term'
+        else if (regEntry.term == term) {
+          filteredPoliticians[id] = p;
+        }
+        // Varianta C: politik má přímo v datech 'term'
+        else if (p.term == term) {
+          filteredPoliticians[id] = p;
+        }
+      }
+      // Fallback: pokud registry chybí, spoléháme na strukturu dat
+      else if (p.term == term || !p.term) {
+        filteredPoliticians[id] = p;
+      }
     }
-  },
+    
+    // Filtr stran: zobrazit jen ty, které mají alespoň jednoho aktivního politika
+    const activePartyNames = new Set(Object.values(filteredPoliticians).map(p => p.party));
+    const filteredParties = {};
+    for (const [key, party] of Object.entries(rawData.parties)) {
+      if (activePartyNames.has(party.name)) {
+        filteredParties[key] = party;
+      }
+    }
+    
+    // Aktualizace state s vyfiltrovanými daty
+    State.stats = {
+      ...rawData,
+      politicians: filteredPoliticians,
+      parties: filteredParties
+    };
+    State.currentTerm = parseInt(term);
+    return true;
+  } catch (err) {
+    alert(err.message);
+    return false;
+  } finally {
+    this.toggleLoader(false);
+  }
+},
 
   async loadPoliticianHistory(pId) {
     const res = await fetch(`${Config.DETAILS_BASE}/${pId}.json`);
@@ -55,45 +97,48 @@ const DataService = {
 
 const Components = {
   // Přehled stran s grafy
-  renderPartyDashboard() {
-      const container = document.getElementById('stats');
-      container.innerHTML = `<h2 class="section-title">Statistiky aktivních stran v období</h2><div class="party-grid"></div>`;
-      const grid = container.querySelector('.party-grid');
+renderPartyDashboard() {
+  const container = document.getElementById('stats');
+  container.innerHTML = `<h2 class="section-title">Statistiky aktivních stran v období</h2><div class="party-grid"></div>`;
+  const grid = container.querySelector('.party-grid');
 
-      // 1. Zjistíme, které strany jsou v tomto období aktivní (mají aspoň jednoho poslance v datech)
-      const activePartyNames = [...new Set(Object.values(State.stats.politicians).map(p => p.party))];
-      
-      // 2. Vyfiltrujeme statistiky stran jen pro ty aktivní a seřadíme podle účasti
-      const filteredParties = Object.values(State.stats.parties)
-        .filter(party => activePartyNames.includes(party.name))
-        .sort((a, b) => b.attendance - a.attendance);
+  // Seznam stran, které mají alespoň jednoho politika v aktuálním období
+  const activePartyNames = [...new Set(Object.values(State.stats.politicians).map(p => p.party))];
+  
+  const filteredParties = Object.values(State.stats.parties)
+    .filter(party => activePartyNames.includes(party.name))
+    .sort((a, b) => b.attendance - a.attendance);
 
-      if (filteredParties.length === 0) {
-        container.innerHTML = `<p class="empty-state">V tomto období nejsou k dispozici žádná data o stranách.</p>`;
-        return;
-      }
+  if (filteredParties.length === 0) {
+    container.innerHTML = `<p class="empty-state">V tomto období nejsou k dispozici žádná data o stranách.</p>`;
+    return;
+  }
 
-      filteredParties.forEach(party => {
-        const card = document.createElement('div');
-        card.className = 'stat-card party-card';
-        // Vytvoření bezpečného ID pro HTML element (odstranění mezer a znaků)
-        const safeId = party.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-        
-        card.innerHTML = `
-          <div class="party-header">
-              <h3>${party.name}</h3>
-              <span class="attendance-badge">${party.attendance}%</span>
-          </div>
-          <p class="small text-muted">Účast strany v tomto období</p>
-          <div class="chart-container">
-              <canvas id="chart-${safeId}"></canvas>
-          </div>
-          <button class="btn btn-outline w-full mt-2" onclick="UI.filterByParty('${party.name}')">Zobrazit poslance</button>
-        `;
-        grid.appendChild(card);
-        this.renderMiniChart(`chart-${safeId}`, party.votes);
-      });
-    },
+  filteredParties.forEach(party => {
+    const card = document.createElement('div');
+    card.className = 'stat-card party-card';
+    // Bezpečné ID: odstranění diakritiky a speciálních znaků
+    const safeId = party.name
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // odstraní diakritiku
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9-]/g, '')
+      .toLowerCase();
+    
+    card.innerHTML = `
+      <div class="party-header">
+          <h3>${party.name}</h3>
+          <span class="attendance-badge">${party.attendance}%</span>
+      </div>
+      <p class="small text-muted">Účast strany v tomto období</p>
+      <div class="chart-container">
+          <canvas id="chart-${safeId}"></canvas>
+      </div>
+      <button class="btn btn-outline w-full mt-2" onclick="UI.filterByParty('${party.name.replace(/'/g, "\\'")}')">Zobrazit poslance</button>
+    `;
+    grid.appendChild(card);
+    this.renderMiniChart(`chart-${safeId}`, party.votes);
+  });
+},
 
   renderMiniChart(canvasId, votes) {
     const ctx = document.getElementById(canvasId).getContext('2d');
@@ -112,69 +157,72 @@ const Components = {
   },
 
   // Tabulka všech poslanců
-  renderPoliticiansList() {
-    const container = document.getElementById('timeline');
-    let list = Object.values(State.stats.politicians);
+renderPoliticiansList() {
+  const container = document.getElementById('timeline');
+  let list = Object.values(State.stats.politicians);
 
-    if (State.filters.party !== 'all') list = list.filter(p => p.party === State.filters.party);
-    if (State.filters.search) {
-      const s = State.filters.search.toLowerCase();
-      list = list.filter(p => p.name.toLowerCase().includes(s));
-    }
+  if (State.filters.party !== 'all') list = list.filter(p => p.party === State.filters.party);
+  if (State.filters.search) {
+    const s = State.filters.search.toLowerCase();
+    list = list.filter(p => p.name.toLowerCase().includes(s));
+  }
 
-    list.sort((a, b) => b.attendance - a.attendance);
+  list.sort((a, b) => b.attendance - a.attendance);
 
-    container.innerHTML = `
-      <div class="table-header-actions">
-          <h2 class="section-title">Seznam poslanců (${list.length})</h2>
-          <div class="filters">
-            <input type="text" id="pSearch" placeholder="Hledat jméno..." value="${State.filters.search}">
-            <select id="pPartyFilter">
-                <option value="all">Všechny strany</option>
-                ${[...new Set(Object.values(State.stats.politicians).map(p => p.party))].sort().map(p => `
+  // Seznam stran pouze z aktuálně zobrazených politiků
+  const availableParties = [...new Set(list.map(p => p.party))].sort();
+
+  container.innerHTML = `
+    <div class="table-header-actions">
+        <h2 class="section-title">Seznam poslanců (${list.length})</h2>
+        <div class="filters">
+          <input type="text" id="pSearch" placeholder="Hledat jméno..." value="${State.filters.search}">
+          <select id="pPartyFilter">
+              <option value="all">Všechny strany</option>
+              ${availableParties.map(p => `
     <option value="${p}" ${State.filters.party === p ? 'selected' : ''}>${p}</option>
 `).join('')}
-            </select>
-          </div>
-      </div>
-      <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Poslanec</th>
-                    <th>Strana</th>
-                    <th class="text-right">Účast</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                ${list.map(p => `
-                    <tr class="clickable-row" onclick="UI.showPoliticianDetail('${p.id}')">
-                        <td><strong>${p.name}</strong></td>
-                        <td><span class="party-tag">${p.party}</span></td>
-                        <td class="text-right">
-                            <div class="progress-mini">
-                                <div class="progress-bar" style="width: ${p.attendance}%"></div>
-                                <span>${p.attendance}%</span>
-                            </div>
-                        </td>
-                        <td class="text-right">🔍</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-      </div>
-    `;
+          </select>
+        </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+          <thead>
+              <tr>
+                  <th>Poslanec</th>
+                  <th>Strana</th>
+                  <th class="text-right">Účast</th>
+                  <th></th>
+              </tr>
+          </thead>
+          <tbody>
+              ${list.map(p => `
+                  <tr class="clickable-row" onclick="UI.showPoliticianDetail('${p.id}')">
+                      <td><strong>${p.name}</strong></td>
+                      <td><span class="party-tag">${p.party}</span></td>
+                      <td class="text-right">
+                          <div class="progress-mini">
+                              <div class="progress-bar" style="width: ${p.attendance}%"></div>
+                              <span>${p.attendance}%</span>
+                          </div>
+                      </td>
+                      <td class="text-right">🔍</td>
+                  </tr>
+              `).join('')}
+          </tbody>
+      </table>
+    </div>
+  `;
 
-    document.getElementById('pSearch').addEventListener('input', (e) => {
-      State.filters.search = e.target.value;
-      this.renderPoliticiansList();
-    });
-    document.getElementById('pPartyFilter').addEventListener('change', (e) => {
-      State.filters.party = e.target.value;
-      this.renderPoliticiansList();
-    });
-  },
+  document.getElementById('pSearch').addEventListener('input', (e) => {
+    State.filters.search = e.target.value;
+    this.renderPoliticiansList();
+  });
+  document.getElementById('pPartyFilter').addEventListener('change', (e) => {
+    State.filters.party = e.target.value;
+    this.renderPoliticiansList();
+  });
+},
 
   // Detail poslance - Srovnání a Historie
   async renderPoliticianDetail(pId) {
