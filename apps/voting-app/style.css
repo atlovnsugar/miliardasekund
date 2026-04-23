@@ -1,0 +1,388 @@
+/* ==========================================
+   VOTING APP - Doplňky k hlavnímu design systému
+   ========================================== */
+/* ==========================================
+   VOTING APP - Override layout pro širší zobrazení
+   ========================================== */
+
+body.voting-app .container {
+  max-width: 1400px;
+  padding: 24px 32px;
+}
+/* Fungující grid pro grafy */
+body.voting-app .grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+/* Zruš úzký container pro tuto appku */
+.voting-app .container {
+  max-width: 1400px !important; /* Místo 800px */
+  padding: 24px 32px;
+}
+
+/* Uprav grid pro grafy - flexibilnější */
+.voting-app .grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+  gap: 24px !important;
+}
+
+/* Participation chart přes celou šířku */
+.voting-app .chart-container.full-width {
+  grid-column: 1 / -1 !important;
+}
+
+/* Zvětši canvas pro grafy */
+.voting-app .chart-canvas {
+  height: 350px !important; /* Místo 300px */
+  min-height: 280px;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 1200px) {
+  .voting-app .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .voting-app .chart-container {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 900px) {
+  .voting-app .container {
+    max-width: 100% !important;
+    padding: 16px;
+  }
+  .voting-app .grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Vote type colors - konzistentní s HTML flag classes */
+.vote-yes { color: var(--emerald-2); }
+.vote-no { color: #f87171; }
+.vote-abstain { color: var(--gold-2); }
+.vote-excused { color: var(--platinum-2); }
+.vote-not-logged { color: var(--text-muted); }
+
+.vote-yes-bg { background: rgba(16, 185, 129, 0.15); border-color: var(--emerald-2); }
+.vote-no-bg { background: rgba(248, 113, 113, 0.15); border-color: #f87171; }
+.vote-abstain-bg { background: rgba(245, 158, 11, 0.15); border-color: var(--gold-2); }
+.vote-excused-bg { background: rgba(100, 116, 139, 0.15); border-color: var(--platinum-2); }
+.vote-not-logged-bg { background: rgba(100, 116, 139, 0.08); border-color: var(--border-color); }
+
+/* Timeline bubbles */
+.timeline {
+  position: relative;
+  height: 60px;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-xs);
+  overflow: visible;
+  margin: 12px 0;
+}
+.timeline-track {
+  position: absolute;
+  top: 50%; left: 20px; right: 20px;
+  height: 3px;
+  background: var(--border-color);
+  transform: translateY(-50%);
+}
+.timeline-bubble {
+  position: absolute;
+  top: 50%;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--bg-primary);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 2;
+}
+.timeline-bubble:hover {
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+.timeline-bubble.vote-yes { background: var(--emerald-2); }
+.timeline-bubble.vote-no { background: #f87171; }
+.timeline-bubble.vote-abstain { background: var(--gold-2); }
+.timeline-bubble.vote-excused { background: var(--platinum-2); }
+.timeline-bubble.vote-not-logged { background: var(--text-muted); opacity: 0.6; }
+
+/* Politician card */
+.politician-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.politician-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-1);
+  transform: translateX(4px);
+}
+.politician-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem;
+  color: white;
+}
+.politician-info h4 {
+  font-size: 1rem; font-weight: 600; margin: 0 0 4px 0;
+}
+.politician-info .party {
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.politician-info .alias {
+  font-size: 0.75rem; color: var(--text-muted);
+  font-style: italic; margin-top: 2px;
+}
+.politician-stats {
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.politician-stats .yes-ratio {
+  font-weight: 700; color: var(--emerald-2);
+}
+
+/* Comparison view */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.comparison-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.comparison-card h4 {
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text-secondary); margin: 0 0 16px 0;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.comparison-bar {
+  display: flex; height: 24px; border-radius: 12px;
+  overflow: hidden; background: rgba(255,255,255,0.06);
+  margin: 8px 0;
+}
+.comparison-segment {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 600; color: white;
+  transition: flex-grow 0.3s ease;
+}
+.comparison-segment.yes { background: var(--emerald-2); }
+.comparison-segment.no { background: #f87171; }
+.comparison-segment.abstain { background: var(--gold-2); color: #1a1a1a; }
+.comparison-segment.other { background: var(--platinum-2); color: #1a1a1a; }
+
+/* Vote detail popup */
+.vote-popup {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: min(90vw, 700px);
+  max-height: 85vh;
+  overflow: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.vote-popup.visible {
+  opacity: 1; transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+.vote-popup-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+.vote-popup-header h3 {
+  font-size: 1.2rem; font-weight: 700; margin: 0;
+}
+.vote-popup-header .close {
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 1.5rem; cursor: pointer; padding: 4px;
+  transition: color 0.2s;
+}
+.vote-popup-header .close:hover { color: var(--text-primary); }
+
+.vote-popup-meta {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px; margin-bottom: 20px; font-size: 0.9rem;
+}
+.vote-popup-meta .meta-item {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.vote-popup-meta .meta-label {
+  font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
+}
+.vote-popup-meta .meta-value {
+  font-weight: 600; color: var(--text-primary);
+}
+
+.vote-popup-chart {
+  margin: 20px 0;
+  height: 200px;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+
+.vote-popup-list {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+.vote-popup-list h4 {
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text-secondary); margin: 0 0 12px 0;
+}
+.vote-list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.9rem;
+}
+.vote-list-item:last-child { border-bottom: none; }
+.vote-list-item .name { font-weight: 500; }
+.vote-list-item .party { color: var(--text-secondary); font-size: 0.85rem; }
+.vote-list-item .vote-badge {
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+}
+
+/* Filters panel */
+.filters-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+.filter-group label {
+  display: block; font-size: 0.8rem; font-weight: 600;
+  color: var(--text-secondary); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.filter-group select, .filter-group input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.filter-group select:focus, .filter-group input:focus {
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* Chart containers */
+.chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.chart-container h3 {
+  font-size: 1.1rem; font-weight: 700; margin: 0 0 16px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-container h3 .subtitle {
+  font-size: 0.85rem; font-weight: 400; color: var(--text-secondary);
+}
+.chart-canvas {
+  width: 100%; height: 300px;
+  position: relative;
+}
+
+/* FiveThirtyEight style annotations */
+.chart-annotation {
+  position: absolute;
+  font-size: 0.75rem; color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.9);
+  padding: 6px 10px; border-radius: 6px;
+  border-left: 3px solid var(--accent-3);
+  max-width: 200px;
+  z-index: 5;
+}
+.chart-annotation::after {
+  content: ''; position: absolute;
+  border: 6px solid transparent;
+}
+.chart-annotation.top-right { top: 20px; right: 20px; }
+.chart-annotation.top-right::after {
+  border-right-color: var(--accent-3);
+  top: 50%; left: -12px; transform: translateY(-50%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .vote-popup { width: 95vw; padding: 16px; }
+  .filters-panel { grid-template-columns: 1fr; }
+  .politician-card { grid-template-columns: auto 1fr; }
+  .politician-stats { grid-column: span 2; text-align: left; }
+}
+
+/* Attendance leaderboard */
+.attendance-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+.attendance-row:last-child { border-bottom: none; }
+.attendance-rank {
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+.attendance-rank.top3 { color: var(--gold-2); }
+.attendance-bar-wrap {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.attendance-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* Active sort button */
+.btn-secondary.active-sort {
+  background: rgba(99,102,241,0.2);
+  color: var(--accent-3);
+  border-color: var(--accent-1);
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hlasování Poslanecké sněmovny</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+</head>
+<body>
+  <!-- Global Loading Overlay -->
+  <div id="globalLoader" class="global-loader hidden">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <p id="loaderMessage" class="loader-message">Načítám data...</p>
+      <div class="loader-progress-track">
+        <div id="loaderProgress" class="loader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-animation"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="voting-app">
+    <div class="app-container">
+
+      <!-- Header -->
+      <header class="app-header">
+        <a href="../.." class="back-link">← Zpět</a>
+        <div class="header-content">
+          <div class="logo">🗳️</div>
+          <h1>Hlasování Poslanecké sněmovny</h1>
+          <p>Interaktivní analýza hlasování</p>
+        </div>
+      </header>
+
+      <!-- Filters -->
+      <section class="card filters-panel">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="termFilter">Volební období</label>
+            <select id="termFilter">
+              <option value="">— Vyberte období —</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="politicianInput">Politik</label>
+            <div class="politician-search-wrapper">
+              <input type="text" id="politicianInput" placeholder="Hledat jméno..." autocomplete="off"/>
+              <div id="politicianDropdown" class="dropdown-list hidden"></div>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-secondary" id="clearPoliticianBtn" style="display:none">✕</button>
+            <button class="btn btn-secondary" id="resetAllBtn">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="card timeline-panel">
+        <div class="panel-header">
+          <h3>Časová osa</h3>
+          <span class="vote-count" id="voteCount">0 hlasování</span>
+        </div>
+        <div class="timeline-container">
+          <div class="timeline-empty" id="timelineEmpty">Vyberte období pro zobrazení</div>
+          <div class="timeline-track vertical" id="timelineTrack"></div>
+        </div>
+        <div id="timelinePagination" class="pagination-container"></div>
+      </section>
+
+      <!-- Stats (conditional) -->
+      <section class="card stats-panel hidden" id="statsPanel">
+        <div class="panel-header">
+          <h3>Statistiky: <span id="statsPoliticianName">—</span></h3>
+          <span class="stats-party" id="statsPoliticianParty">—</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h4>Docházka</h4>
+            <div class="stat-big" id="statAttendance">—%</div>
+            <div class="stat-detail" id="statAttendanceDetail">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="attendanceFill"></div></div>
+          </div>
+          <div class="stat-card">
+            <h4>Rozložení hlasů</h4>
+            <div id="voteDistributionChart"></div>
+          </div>
+          <div class="stat-item">
+            <div class="sil">Shoda s výsledkem hlasování</div>
+            <div class="siv">
+                <span id="statMatchRate">--%</span> <!-- Nový element -->
+                <div class="small" id="statMatchRateDetail">--/-- hlasování</div> <!-- Nový detailní element -->
+            </div>
+        </div>
+        </div>
+        <div class="stat-card full-width">
+          <h4>Historie hlasování</h4>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Datum</th><th>Schůze</th><th>Výsledek</th><th>Hlas</th></tr></thead>
+              <tbody id="votingHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Error State -->
+      <div class="error-state hidden" id="errorState">
+        <div class="error-icon">⚠️</div>
+        <h3>Chyba</h3>
+        <p id="errorMessage">—</p>
+        <button class="btn btn-primary" id="retryInitBtn">Zkusit znovu</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Vote Popup -->
+  <div class="vote-overlay hidden" id="voteOverlay">
+    <div class="vote-popup">
+      <button class="popup-close" id="popupClose" aria-label="Zavřít">&times;</button>
+      <div class="popup-content" id="popupContent"></div>
+      <div id="popupPagination" class="pagination-container"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Data: <a href="https://www.psp.cz" target="_blank">PSP ČR</a> · Statická vizualizace</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hlasování Poslanecké sněmovny</title>
+  <link rel="stylesheet" href="../../style.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+</head>
+<body>
+
+  <!-- ⭐ Global Loading Overlay (JEDINÝ loading) -->
+  <div id="globalLoader" class="global-loader hidden">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <p id="loaderMessage" class="loader-message">Načítám data...</p>
+      <div class="loader-progress-track">
+        <div id="loaderProgress" class="loader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-animation"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="voting-app">
+    <div class="app-container">
+
+      <!-- Header -->
+      <header class="app-header">
+        <a href="../.." class="back-link">← Zpět na přehled</a>
+        <div class="header-content">
+          <div class="logo">🗳️</div>
+          <h1>Hlasování Poslanecké sněmovny</h1>
+          <p>Interaktivní analýza hlasování. Filtruj, porovnávej, objevuj.</p>
+        </div>
+      </header>
+
+      <!-- Filters & Timeline Panel -->
+      <section class="card main-panel">
+        <div class="panel-header">
+          <h2>Průzkum hlasování</h2>
+          <!-- ⭐ Starý loadingIndicator odstraněn - používáme globalLoader -->
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="termFilter">Volební období</label>
+            <select id="termFilter"></select>
+          </div>
+          <div class="filter-group">
+            <label for="politicianSelect">Politik (volitelné)</label>
+            <div class="politician-search-wrapper">
+              <input type="text" id="politicianInput" placeholder="Začněte psát jméno..." autocomplete="off">
+              <div id="politicianDropdown" class="dropdown-list hidden"></div>
+            </div>
+          </div>
+          <div class="filter-group filter-actions">
+            <button class="btn btn-secondary" id="clearPoliticianBtn" style="display:none">✕ Zrušit výběr</button>
+            <button class="btn btn-secondary" id="resetAllBtn">Reset</button>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-section">
+          <div class="timeline-header">
+            <h3>Časová osa hlasování</h3>
+            <span class="vote-count" id="voteCount">0 hlasování</span>
+          </div>
+          <div class="timeline-container" id="timelineContainer">
+            <div class="timeline-empty" id="timelineEmpty">
+              Vyberte volební období pro zobrazení časové osy
+            </div>
+            <div class="timeline-track vertical" id="timelineTrack"></div>
+          </div>
+          <!-- ⭐ Pagination MOVED INSIDE timeline-section -->
+          <div id="timelinePagination" class="timeline-pagination"></div>
+        </div>
+      </section>
+
+      <!-- Stats Panel (shown only when politician selected) -->
+      <section class="card stats-panel hidden" id="statsPanel">
+        <div class="panel-header">
+          <h2>Statistiky: <span id="statsPoliticianName">—</span></h2>
+          <span class="stats-party" id="statsPoliticianParty">—</span>
+        </div>
+
+        <!-- Stats grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Celková docházka</h3>
+            <div class="stat-big-number" id="statAttendance">—%</div>
+            <div class="stat-detail" id="statAttendanceDetail">—</div>
+            <div class="attendance-bar-large">
+              <div class="attendance-fill" id="attendanceFill"></div>
+            </div>
+            <div class="stat-comparison" id="statAvgComparison"></div>
+          </div>
+
+          <div class="stat-card">
+            <h3>Rozložení hlasů</h3>
+            <div id="voteDistributionChart"></div>
+          </div>
+
+          <div class="stat-card">
+            <h3>Výsledky hlasování</h3>
+            <div class="result-badges" id="resultBadges"></div>
+            <div class="mini-chart" id="resultChart"></div>
+          </div>
+        </div>
+
+        <!-- Monthly attendance table -->
+        <div class="stat-card full-width">
+          <div class="table-header">
+            <h3>Měsíční docházka</h3>
+            <div class="table-sort-controls">
+              <span class="sort-label">Seřadit:</span>
+              <button class="sort-btn active" data-sort="date" id="sortDate">📅 Datum</button>
+              <button class="sort-btn" data-sort="attendance" id="sortAttendance">📊 Docházka</button>
+              <button class="sort-btn" data-sort="deviation" id="sortDeviation">📈 Odchylka</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="monthlyTable">
+              <thead>
+                <tr>
+                  <th>Měsíc</th>
+                  <th>Přítomno</th>
+                  <th>Celkem</th>
+                  <th>Docházka</th>
+                  <th>Průměr PS</th>
+                  <th>Odchylka</th>
+                  <th>Vizualizace</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Voting history detail -->
+        <div class="stat-card full-width">
+          <h3>Detail hlasování</h3>
+          <div class="table-wrapper">
+            <table class="data-table" id="votingHistoryTable">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Schůze</th>
+                  <th>Hlasování</th>
+                  <th>Výsledek</th>
+                  <th>Hlas</th>
+                </tr>
+              </thead>
+              <tbody id="votingHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Error state -->
+      <div class="error-state hidden" id="errorState">
+        <div class="error-icon">⚠️</div>
+        <h3>Chyba při načítání dat</h3>
+        <p id="errorMessage">—</p>
+        <button class="btn btn-primary" onclick="location.reload()">Zkusit znovu</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Vote detail popup -->
+  <div class="vote-overlay hidden" id="voteOverlay">
+    <div class="vote-popup" id="votePopup">
+      <button class="popup-close" id="popupClose" aria-label="Zavřít">&times;</button>
+      <div class="popup-content" id="popupContent"></div>
+      <!-- ⭐ Pagination MOVED INSIDE popup -->
+      <div id="popupPagination" class="popup-pagination"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Data: <a href="https://www.psp.cz" target="_blank">Poslanecká sněmovna PČR</a> · 
+    Vizualizace: statická aplikace </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

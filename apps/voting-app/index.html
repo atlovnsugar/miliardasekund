@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hlasování Poslanecké sněmovny</title>
+  <link rel="stylesheet" href="../../style.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- D3.js pro pokročilé vizualizace -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+</head>
+<body  class="voting-app">
+  <div class="bg-animation"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <a href="../.." class="back-link">← Zpět na přehled aplikací</a>
+      <div class="logo">🗳️</div>
+      <h1>Hlasování Poslanecké sněmovny</h1>
+      <p>Interaktivní analýza hlasování politiků. Filtruj, porovnávej, objevuj vzorce.</p>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filter-group">
+        <label for="dateFrom">Od</label>
+        <input type="date" id="dateFrom">
+        </div>
+
+        <!-- PŘIDEJ TOTO: -->
+        <div class="filter-group">
+        <label for="dateTo">Do</label>
+        <input type="date" id="dateTo">
+        </div>
+        <div class="filter-group">
+        <label for="termFilter">Volební období</label>
+        <select id="termFilter">
+            <option value="">Všechna období</option>
+            <!-- Naplněno dynamicky -->
+        </select>
+        </div>
+      <div class="filter-group">
+        <label for="partyFilter">Strana</label>
+        <select id="partyFilter">
+          <option value="">Všechny strany</option>
+          <!-- Naplněno dynamicky -->
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="politicianSearch">Politik</label>
+        <input type="text" id="politicianSearch" placeholder="Hledat jméno...">
+      </div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-secondary" id="resetFilters">Resetovat</button>
+      </div>
+    </div>
+
+    <!-- Main content grid -->
+    <div class="grid grid-3">
+      
+      <!-- Participation chart -->
+      <div class="card chart-container" style="grid-column: span 3;">
+        <h3>Účast v hlasování <span class="subtitle">počet přítomných vs. potřebná většina</span></h3>
+        <div class="chart-canvas" id="participationChart"></div>
+        <div class="chart-annotation top-right">
+          <strong>Tip:</strong> Klikni na sloupec pro detail hlasování
+        </div>
+      </div>
+
+      <!-- Party breakdown -->
+      <div class="card chart-container">
+        <h3>Rozdělení podle stran</h3>
+        <div class="chart-canvas" id="partyChart"></div>
+      </div>
+
+      <!-- Vote type distribution -->
+      <div class="card chart-container">
+        <h3>Typy hlasů</h3>
+        <div class="chart-canvas" id="voteTypeChart"></div>
+      </div>
+
+      <!-- Timeline preview -->
+      <div class="card chart-container">
+        <h3>Časová osa</h3>
+        <div class="chart-canvas" id="timelinePreview"></div>
+      </div>
+
+    </div>
+
+    <!-- Politicians list -->
+    <div class="card">
+      <h3 style="margin-bottom: 20px;">Politici</h3>
+      <div id="politiciansList" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+        <!-- Naplněno dynamicky -->
+      </div>
+    </div>
+        <!-- Attendance leaderboard -->
+    <div class="card" id="attendanceSection">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Docházka na hlasování</h3>
+        <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary active-sort" id="sortBest" onclick="setSortAttendance('best')">🏆 Nejlepší</button>
+        <button class="btn btn-secondary" id="sortWorst" onclick="setSortAttendance('worst')">⚠️ Nejhorší</button>
+        </div>
+    </div>
+    <div id="attendanceLeaderboard"></div>
+    </div>
+    <!-- Comparison section -->
+    <div class="card" id="comparisonSection" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>Porovnání</h3>
+        <button class="btn btn-secondary" id="clearComparison">✕ Zavřít</button>
+      </div>
+      <div class="comparison-grid" id="comparisonGrid">
+        <!-- Dynamicky přidáno -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Vote detail popup -->
+  <div class="vote-popup" id="votePopup">
+    <div class="vote-popup-header">
+      <h3 id="popupTitle">Detail hlasování</h3>
+      <button class="close" id="closePopup">&times;</button>
+    </div>
+    <div class="vote-popup-meta" id="popupMeta">
+      <!-- Metadata -->
+    </div>
+    <div class="vote-popup-chart" id="popupChart">
+      <!-- Party breakdown bar chart -->
+    </div>
+    <div class="vote-popup-list">
+      <h4>Seznam politiků</h4>
+      <div id="popupList">
+        <!-- List of politicians who voted -->
+      </div>
+    </div>
+  </div>
+  <div class="loading-overlay hidden" id="globalLoading">
+    <div class="spinner"></div>
+    <div>Načítám data...</div>
+  </div>
+
+  <footer>
+    <p>Data: <a href="https://www.psp.cz" target="_blank">Poslanecká sněmovna PČR</a> · 
+    Vizualizace: <a href="https://github.com/tvujrepo" target="_blank">GitHub</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

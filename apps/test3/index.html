@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hlasování PSP ČR - Interaktivní Statistika</title>
+  
+  <!-- CSS - Používáme stávající styly, které si app.js doupraví -->
+  <link rel="stylesheet" href="style.css" />
+  
+  <!-- Chart.js pro grafy -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Globální Loader -->
+  <div id="globalLoader" class="global-loader hidden">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <p>Načítám a zpracovávám data...</p>
+    </div>
+  </div>
+
+  <div class="bg-animation">
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <div class="voting-app">
+    <div class="app-container">
+
+      <!-- Header s výběrem období -->
+      <header class="app-header">
+        <div class="header-content">
+          <div class="logo">🗳️</div>
+          <div>
+            <h1>Hlasování PSP ČR</h1>
+            <p class="subtitle">Interaktivní přehled docházky a statistik</p>
+          </div>
+        </div>
+        
+        <div class="term-picker">
+          <label for="termSelect">Volební období:</label>
+          <select id="termSelect">
+            <option value="" disabled selected>Vyberte období...</option>
+            <option value="9">9. období (2021–2025)</option>
+            <option value="8">8. období (2017–2021)</option>
+            <option value="7">7. období (2013–2017)</option>
+          </select>
+        </div>
+      </header>
+
+      <!-- Dashboard stran (vyplní JS) -->
+      <section id="stats" class="stats-section">
+        <div class="empty-state">
+          <p>Vyberte volební období pro zobrazení statistik stran.</p>
+        </div>
+      </section>
+
+      <!-- Seznam poslanců a filtry (vyplní JS) -->
+      <section id="timeline" class="timeline-section">
+        <!-- Zde se vykreslí vyhledávání a tabulka -->
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Overlay pro detail poslance (Srovnání + Historie) -->
+  <div class="vote-overlay hidden" id="voteOverlay">
+    <div class="vote-popup">
+      <button class="popup-close" id="popupClose" aria-label="Zavřít">&times;</button>
+      <div class="popup-content" id="popupContent">
+        <!-- Dynamický obsah z app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Hlavní logika aplikace -->
+  <script src="app.js"></script>
+</body>
+</html>
