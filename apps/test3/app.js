@@ -56,30 +56,44 @@ const DataService = {
 const Components = {
   // Přehled stran s grafy
   renderPartyDashboard() {
-    const container = document.getElementById('stats');
-    container.innerHTML = `<h2 class="section-title">Statistiky politických stran</h2><div class="party-grid"></div>`;
-    const grid = container.querySelector('.party-grid');
+      const container = document.getElementById('stats');
+      container.innerHTML = `<h2 class="section-title">Statistiky aktivních stran v období</h2><div class="party-grid"></div>`;
+      const grid = container.querySelector('.party-grid');
 
-    const sortedParties = Object.values(State.stats.parties).sort((a, b) => b.attendance - a.attendance);
+      // 1. Zjistíme, které strany jsou v tomto období aktivní (mají aspoň jednoho poslance v datech)
+      const activePartyNames = [...new Set(Object.values(State.stats.politicians).map(p => p.party))];
+      
+      // 2. Vyfiltrujeme statistiky stran jen pro ty aktivní a seřadíme podle účasti
+      const filteredParties = Object.values(State.stats.parties)
+        .filter(party => activePartyNames.includes(party.name))
+        .sort((a, b) => b.attendance - a.attendance);
 
-    sortedParties.forEach(party => {
-      const card = document.createElement('div');
-      card.className = 'stat-card party-card';
-      card.innerHTML = `
-        <div class="party-header">
-            <h3>${party.name}</h3>
-            <span class="attendance-badge">${party.attendance}%</span>
-        </div>
-        <p class="small text-muted">Průměrná účast strany</p>
-        <div class="chart-container">
-            <canvas id="chart-${party.name.replace(/\s+/g, '')}"></canvas>
-        </div>
-        <button class="btn btn-outline w-full mt-2" onclick="UI.filterByParty('${party.name}')">Zobrazit poslance strany</button>
-      `;
-      grid.appendChild(card);
-      this.renderMiniChart(`chart-${party.name.replace(/\s+/g, '')}`, party.votes);
-    });
-  },
+      if (filteredParties.length === 0) {
+        container.innerHTML = `<p class="empty-state">V tomto období nejsou k dispozici žádná data o stranách.</p>`;
+        return;
+      }
+
+      filteredParties.forEach(party => {
+        const card = document.createElement('div');
+        card.className = 'stat-card party-card';
+        // Vytvoření bezpečného ID pro HTML element (odstranění mezer a znaků)
+        const safeId = party.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+        
+        card.innerHTML = `
+          <div class="party-header">
+              <h3>${party.name}</h3>
+              <span class="attendance-badge">${party.attendance}%</span>
+          </div>
+          <p class="small text-muted">Účast strany v tomto období</p>
+          <div class="chart-container">
+              <canvas id="chart-${safeId}"></canvas>
+          </div>
+          <button class="btn btn-outline w-full mt-2" onclick="UI.filterByParty('${party.name}')">Zobrazit poslance</button>
+        `;
+        grid.appendChild(card);
+        this.renderMiniChart(`chart-${safeId}`, party.votes);
+      });
+    },
 
   renderMiniChart(canvasId, votes) {
     const ctx = document.getElementById(canvasId).getContext('2d');
@@ -117,7 +131,9 @@ const Components = {
             <input type="text" id="pSearch" placeholder="Hledat jméno..." value="${State.filters.search}">
             <select id="pPartyFilter">
                 <option value="all">Všechny strany</option>
-                ${Object.keys(State.stats.parties).map(p => `<option value="${p}" ${State.filters.party === p ? 'selected' : ''}>${p}</option>`).join('')}
+                ${[...new Set(Object.values(State.stats.politicians).map(p => p.party))].sort().map(p => `
+    <option value="${p}" ${State.filters.party === p ? 'selected' : ''}>${p}</option>
+`).join('')}
             </select>
           </div>
       </div>
@@ -266,11 +282,15 @@ const UI = {
 
   bindEvents() {
     document.getElementById('termSelect').addEventListener('change', async (e) => {
-      if (e.target.value) {
-        const success = await DataService.loadTermStats(e.target.value);
-        if (success) this.refreshAll();
-      }
-    });
+          if (e.target.value) {
+            // RESET filtrů, aby nezůstala viset strana z minulého období
+            State.filters.party = 'all';
+            State.filters.search = '';
+            
+            const success = await DataService.loadTermStats(e.target.value);
+            if (success) this.refreshAll();
+          }
+        });
 
     document.getElementById('popupClose').addEventListener('click', () => {
       document.getElementById('voteOverlay').classList.add('hidden');
