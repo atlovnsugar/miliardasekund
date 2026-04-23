@@ -7,6 +7,19 @@ const Config = {
   DATA_BASE: './data/aggregated',
   DETAILS_BASE: './data/aggregated/details',
   REGISTRY_URL: './data/politicians/registry.json',
+  SESSIONS_INDEX_URL: './data/sessions_index.json',
+  
+  // 🔥 TERM_RANGES pro spolehlivé filtrování podle data
+  TERM_RANGES: {
+    '9': { from: '2021-10-01', to: '2025-12-31' },
+    '8': { from: '2017-10-01', to: '2021-09-30' },
+    '7': { from: '2013-10-01', to: '2017-09-30' },
+    '6': { from: '2010-06-01', to: '2013-09-30' },
+    '5': { from: '2006-06-01', to: '2010-05-31' },
+    '4': { from: '2002-06-01', to: '2006-05-31' },
+    '3': { from: '1998-06-01', to: '2002-05-31' },
+    '2': { from: '1996-06-01', to: '1998-05-31' },
+  }
 };
 
 const State = {
@@ -70,6 +83,126 @@ async loadTermStats(term) {
   toggleLoader(show) {
     const loader = document.getElementById('globalLoader');
     if (loader) loader.classList.toggle('hidden', !show);
+  },
+
+    async fetchSessionsIndex() {
+    try {
+      const res = await fetch(Config.SESSIONS_INDEX_URL);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      console.warn('⚠️ Nepodařilo se načíst sessions_index.json:', e);
+      return null;
+    }
+  },
+
+  // 🔥 NOVÁ METODA: Získá ID politiků, kteří hlasovali v daném období
+  async getActivePoliticianIdsForTerm(term) {
+    const range = Config.TERM_RANGES[term];
+    if (!range) return new Set();
+    
+    const sessionsIndex = await this.fetchSessionsIndex();
+    const sessionIds = sessionsIndex?.[term];
+    if (!sessionIds?.length) return new Set();
+    
+    const activeIds = new Set();
+    
+    // Načteme jen první 3 schůze jako vzorek (pro rychlost)
+    // Pokud potřebuješ 100% přesnost, odstraň .slice(0, 3)
+    const sampleSessions = sessionIds.slice(0, 3);
+    
+    for (const sid of sampleSessions) {
+      try {
+        const res = await fetch(`./data/sessions/session_${sid}.json`);
+        if (!res.ok) continue;
+        const session = await res.json();
+        
+        // Projdeme hlasy a extrahujeme ID politiků
+        if (session?.votes) {
+          for (const vote of session.votes) {
+            // Filtr podle data (dodatečná pojistka)
+            if (vote.d >= range.from && vote.d <= range.to) {
+              if (vote.vl?.length) {
+                for (const voter of vote.vl) {
+                  if (voter.i) activeIds.add(String(voter.i));
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`⚠️ Chyba při načítání session ${sid}:`, e);
+      }
+    }
+    
+    console.log(`🔍 Vzorek pro období ${term}: ${activeIds.size} aktivních politiků`);
+    return activeIds;
+  },
+
+  async loadTermStats(term) {
+    try {
+      this.toggleLoader(true);
+      
+      // 1. Načti aggregated data (pro UI a statistiky)
+      const res = await fetch(`${Config.DATA_BASE}/stats_${term}.json`);
+      if (!res.ok) throw new Error('Data pro toto období nebyla nalezena.');
+      const rawData = await res.json();
+      
+      // 2. 🔥 Získej whitelist aktivních politiků ze sessions
+      const activeIds = await this.getActivePoliticianIdsForTerm(term);
+      
+      // 3. Filtr politiků: jen ti, kteří jsou v whitelistu
+      let filteredPoliticians = rawData.politicians;
+      if (activeIds.size > 0) {
+        filteredPoliticians = {};
+        for (const [id, p] of Object.entries(rawData.politicians || {})) {
+          if (activeIds.has(String(id))) {
+            // Normalizace klíčů pro kompatibilitu
+            if (p.p && !p.party) p.party = p.p;
+            if (p.n && !p.name) p.name = p.n;
+            filteredPoliticians[id] = p;
+          }
+        }
+      } else {
+        // Fallback: normalizace bez filtru
+        for (const p of Object.values(rawData.politicians || {})) {
+          if (p.p && !p.party) p.party = p.p;
+          if (p.n && !p.name) p.name = p.n;
+        }
+      }
+      
+      // 4. Filtr stran: jen ty, které mají alespoň jednoho aktivního politika
+      const activePartyNames = new Set(
+        Object.values(filteredPoliticians).map(p => p.party || p.p).filter(Boolean)
+      );
+      
+      const filteredParties = {};
+      for (const [key, party] of Object.entries(rawData.parties || {})) {
+        if (activePartyNames.has(party.name)) {
+          filteredParties[key] = party;
+        }
+      }
+      
+      // 5. Aktualizuj state
+      State.stats = {
+        ...rawData,
+        politicians: filteredPoliticians,
+        parties: filteredParties
+      };
+      State.currentTerm = parseInt(term);
+      
+      const pCount = Object.keys(filteredPoliticians).length;
+      const sCount = Object.keys(filteredParties).length;
+      console.log(`✅ Načteno období ${term}: ${pCount} politiků, ${sCount} stran`);
+      return true;
+      
+    } catch (err) {
+      console.error('❌ Chyba při načítání:', err);
+      alert(err.message);
+      return false;
+    } finally {
+      this.toggleLoader(false);
+    }
   }
 };
 
@@ -272,11 +405,15 @@ async renderPoliticianDetail(pId) {
 
 const UI = {
   async init() {
-    await DataService.fetchRegistry(); // Počkáme na registry
+    // Načti registry i sessions index paralelně
+    await Promise.all([
+      DataService.fetchRegistry(),
+      DataService.fetchSessionsIndex() // 🆕 Přednačti sessions index
+    ]);
+    
     this.bindEvents();
     
     const termSelect = document.getElementById('termSelect');
-    // Pokud je už něco vybrané (např. z localStorage), načti to
     if (termSelect && termSelect.value) {
         const success = await DataService.loadTermStats(termSelect.value);
         if (success) this.refreshAll();
